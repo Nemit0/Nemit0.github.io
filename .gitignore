@@ -1,0 +1,8 @@
+# Agent Artifacts
+.tmp/
+agent_reports/
+.github/
+
+# Agent Configuration (local only)
+CLAUDE.md
+AGENTS.md
