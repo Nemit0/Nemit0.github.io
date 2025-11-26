@@ -11,21 +11,20 @@ permissions:
   contents: write
   pull-requests: write
 
-env:
-  CONTENT_BRANCH: content
-  MAIN_BRANCH: main
-
 jobs:
   content-to-main:
-    if: ${{ github.ref == format('refs/heads/{0}', env.CONTENT_BRANCH) && github.actor != 'github-actions[bot]' }}
+    if: ${{ github.ref == 'refs/heads/content' && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
+    env:
+      SOURCE_BRANCH: content
+      TARGET_BRANCH: main
     steps:
       - name: Ensure target branch exists
         id: check
         uses: actions/github-script@v7
         with:
           script: |
-            const branch = process.env.MAIN_BRANCH;
+            const branch = process.env.TARGET_BRANCH;
             try {
               await github.rest.git.getRef({
                 owner: context.repo.owner,
@@ -41,21 +40,24 @@ jobs:
         if: steps.check.outputs.exists == 'true'
         uses: peter-evans/merge-branch@v6
         with:
-          head: ${{ env.CONTENT_BRANCH }}
-          base: ${{ env.MAIN_BRANCH }}
+          head: ${{ env.SOURCE_BRANCH }}
+          base: ${{ env.TARGET_BRANCH }}
           commit_message_template: "chore: sync content -> main"
           merge_method: merge
 
   main-to-content:
-    if: ${{ github.ref == format('refs/heads/{0}', env.MAIN_BRANCH) && github.actor != 'github-actions[bot]' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
+    env:
+      SOURCE_BRANCH: main
+      TARGET_BRANCH: content
     steps:
       - name: Ensure target branch exists
         id: check
         uses: actions/github-script@v7
         with:
           script: |
-            const branch = process.env.CONTENT_BRANCH;
+            const branch = process.env.TARGET_BRANCH;
             try {
               await github.rest.git.getRef({
                 owner: context.repo.owner,
@@ -71,7 +73,7 @@ jobs:
         if: steps.check.outputs.exists == 'true'
         uses: peter-evans/merge-branch@v6
         with:
-          head: ${{ env.MAIN_BRANCH }}
-          base: ${{ env.CONTENT_BRANCH }}
+          head: ${{ env.SOURCE_BRANCH }}
+          base: ${{ env.TARGET_BRANCH }}
           commit_message_template: "chore: sync main -> content"
           merge_method: merge
