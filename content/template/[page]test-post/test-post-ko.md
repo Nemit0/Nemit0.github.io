@@ -2,7 +2,7 @@
 title: "테스트 블로그 포스트"
 description: "마크다운 처리 검증을 위한 테스트 포스트"
 date: "2025-11-25"
-category: "engineering"
+category: "template"
 tags: ["테스트", "마크다운", "nextjs"]
 author: "테스트 작성자"
 featured: true

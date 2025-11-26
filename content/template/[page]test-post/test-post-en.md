@@ -2,7 +2,7 @@
 title: "Test Blog Post"
 description: "A test post to verify markdown processing"
 date: "2025-11-25"
-category: "engineering"
+category: "template"
 tags: ["test", "markdown", "nextjs"]
 author: "Test Author"
 featured: true
