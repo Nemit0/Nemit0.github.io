@@ -47,11 +47,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin $TARGET_BRANCH
-          git fetch origin $SOURCE_BRANCH
-          git checkout $TARGET_BRANCH
+          git fetch origin $TARGET_BRANCH $SOURCE_BRANCH
+          git switch --detach origin/$TARGET_BRANCH
           git merge --no-ff --no-edit origin/$SOURCE_BRANCH
-          git push origin $TARGET_BRANCH
+          git push origin HEAD:$TARGET_BRANCH
 
   main-to-content:
     if: ${{ github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]' }}
@@ -88,8 +87,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin $TARGET_BRANCH
-          git fetch origin $SOURCE_BRANCH
-          git checkout $TARGET_BRANCH
+          git fetch origin $TARGET_BRANCH $SOURCE_BRANCH
+          git switch --detach origin/$TARGET_BRANCH
           git merge --no-ff --no-edit origin/$SOURCE_BRANCH
-          git push origin $TARGET_BRANCH
+          git push origin HEAD:$TARGET_BRANCH
