@@ -17,7 +17,7 @@ env:
 
 jobs:
   content-to-main:
-    if: github.ref == format('refs/heads/{0}', env.CONTENT_BRANCH) && github.actor != 'github-actions[bot]'
+    if: ${{ github.ref == format('refs/heads/{0}', env.CONTENT_BRANCH) && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Ensure target branch exists
@@ -47,7 +47,7 @@ jobs:
           merge_method: merge
 
   main-to-content:
-    if: github.ref == format('refs/heads/{0}', env.MAIN_BRANCH) && github.actor != 'github-actions[bot]'
+    if: ${{ github.ref == format('refs/heads/{0}', env.MAIN_BRANCH) && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Ensure target branch exists
