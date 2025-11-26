@@ -20,17 +20,19 @@ A field is a set $F$ with two binary operations $+$ and $\cdot$ such that:
 2. $(F \setminus \{0\}, \cdot)$ is an abelian group with identity $1$.
 3. Multiplication distributes over addition:
 $$
-a  \cdot (b + c) = a \cdot b + a \cdot c \quad \text{for all } a,b,c \in F.
+a \cdot (b + c) = a \cdot b + a \cdot c \quad \text{for all } a,b,c \in F.
 $$
 
 ## Ordered and complete fields
 
 Let $\mathbb{R}$ denote the real numbers. They satisfy:
 
-- **Ordered:** There is a total order $\\ge$ such that  
-  $x \\ge y \\Rightarrow x + z \\ge y + z$ and  
-  $x \\ge 0,\\, y \\ge 0 \\Rightarrow xy \\ge 0$.
-- **Dedekind completeness:** Every nonempty subset $S \\subset \\mathbb{R}$ with an upper bound has a least upper bound $\\sup S$ in $\\mathbb{R}$.
+- **Ordered:** There is a total order $\ge$ such that
+
+  $x \ge y \Rightarrow x + z \ge y + z$ and  
+  $x \ge 0,\, y \ge 0 \Rightarrow xy \ge 0$.
+
+- **Dedekind completeness:** Every nonempty subset $S \subset \mathbb{R}$ with an upper bound has a least upper bound $\sup S$ in $\mathbb{R}$.
 
 By contrast, the rationals $\mathbb{Q}$ are not complete:  
 $$
