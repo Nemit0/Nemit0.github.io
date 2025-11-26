@@ -1,7 +1,21 @@
+# Next.js
+/.next/
+/out/
+/node_modules/
+
+# Dependencies
+package-lock.json
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
 # Agent Artifacts
 .tmp/
 agent_reports/
 .github/
+.claude/
+docs/
 
 # Agent Configuration (local only)
 CLAUDE.md
