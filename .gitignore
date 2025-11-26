@@ -13,7 +13,6 @@ next-env.d.ts
 # Agent Artifacts
 .tmp/
 agent_reports/
-.github/
 .claude/
 docs/
 
