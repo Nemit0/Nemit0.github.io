@@ -36,14 +36,22 @@ jobs:
               core.info(`Branch ${branch} not found, skipping merge.`);
               core.setOutput('exists', 'false');
             }
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+          fetch-depth: 0
+
       - name: Merge content into main
         if: steps.check.outputs.exists == 'true'
-        uses: peter-evans/merge-branch@v6
-        with:
-          head: ${{ env.SOURCE_BRANCH }}
-          base: ${{ env.TARGET_BRANCH }}
-          commit_message_template: "chore: sync content -> main"
-          merge_method: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin $TARGET_BRANCH
+          git fetch origin $SOURCE_BRANCH
+          git checkout $TARGET_BRANCH
+          git merge --no-ff --no-edit origin/$SOURCE_BRANCH
+          git push origin $TARGET_BRANCH
 
   main-to-content:
     if: ${{ github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]' }}
@@ -69,11 +77,19 @@ jobs:
               core.info(`Branch ${branch} not found, skipping merge.`);
               core.setOutput('exists', 'false');
             }
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+          fetch-depth: 0
+
       - name: Merge main into content
         if: steps.check.outputs.exists == 'true'
-        uses: peter-evans/merge-branch@v6
-        with:
-          head: ${{ env.SOURCE_BRANCH }}
-          base: ${{ env.TARGET_BRANCH }}
-          commit_message_template: "chore: sync main -> content"
-          merge_method: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin $TARGET_BRANCH
+          git fetch origin $SOURCE_BRANCH
+          git checkout $TARGET_BRANCH
+          git merge --no-ff --no-edit origin/$SOURCE_BRANCH
+          git push origin $TARGET_BRANCH
