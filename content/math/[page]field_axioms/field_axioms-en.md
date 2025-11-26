@@ -10,27 +10,43 @@ pinned: false
 ---
 # Field Axioms
 
-Analytics is branch of mathematics where we study the properties and structures of fields. Let's start with the easiest example of a field: the set of real numbers, denoted by \( \mathbb{R} \).
+Analysis is the branch of mathematics where we study the properties and structures of fields. A basic example is the set of real numbers, denoted by $\mathbb{R}$.
 
-## Set of Real Numbers.
-A set of real numbers \( \mathbb{R} \) is defined(from wikipedia) as follows:
+## Field axioms (sketch)
 
-et R {\displaystyle \mathbb {R} } denote the set of all real numbers. Then:
+A field is a set $F$ with two binary operations $+$ and $\cdot$ such that:
 
-    The set R {\displaystyle \mathbb {R} } is a field, meaning that addition and multiplication are defined and have the usual properties.
-    The field R {\displaystyle \mathbb {R} } is ordered, meaning that there is a total order ≥ such that for all real numbers x, y and z:
-        if x ≥ y, then x + z ≥ y + z;
-        if x ≥ 0 and y ≥ 0, then xy ≥ 0.
-    The order is Dedekind-complete, meaning that every nonempty subset S of R {\displaystyle \mathbb {R} } with an upper bound in R {\displaystyle \mathbb {R} } has a least upper bound (a.k.a., supremum) in R {\displaystyle \mathbb {R} }.
+1. $(F, +)$ is an abelian group with identity $0$.
+2. $(F \setminus \{0\}, \cdot)$ is an abelian group with identity $1$.
+3. Multiplication distributes over addition:
+$$
+a \cdot (b + c) = a \cdot b + a \cdot c \quad \text{for all } a,b,c \in F.
+$$
 
-The last property applies to the real numbers but not to the rational numbers (or to other more exotic ordered fields). For example, { x ∈ Q : x 2 < 2 } {\displaystyle \{x\in \mathbb {Q} :x^{2}<2\}} has a rational upper bound (e.g., 1.42), but no least rational upper bound, because 2 {\displaystyle {\sqrt {2}}} is not rational. 
+## Ordered and complete fields
 
-Let \( \mathbb{R} \) denote the set of real numbers.  Then
- - The set \( \mathbb{R} \) is a field, meaning that addition and multiplication are defined and have the usual properties.
- - The field \( \mathbb{R} \) is ordered, meaning that there is a total order \( \geq \) such that for all real numbers \( x, y \) and \( z \):
-   - if \( x \geq y \), then \( x + z \geq y + z \);
-   - if \( x \geq 0 \) and \( y \geq 0 \), then \( xy \geq 0 \).
- - The order is Dedekind-complete, meaning that every nonempty subset \( S \) of \( \mathbb{R} \) with an upper bound in \( \mathbb{R} \) has a least upper bound (a.k.a., supremum) in \( \mathbb{R} \).
- [Source: Wikipedia](https://en.wikipedia.org/wiki/Real_number#Formal_definitions)
+Let $\mathbb{R}$ denote the real numbers. They satisfy:
+
+- **Ordered:** There is a total order $\ge$ such that
+
+  $x \ge y \Rightarrow x + z \ge y + z$ and  
+  $x \ge 0,\, y \ge 0 \Rightarrow xy \ge 0$.
+
+- **Dedekind completeness:** Every nonempty subset $S \subset \mathbb{R}$ with an upper bound has a least upper bound $\sup S$ in $\mathbb{R}$.
+
+By contrast, the rationals $\mathbb{Q}$ are not complete:  
+$$
+S = \{\, x \in \mathbb{Q} : x^2 < 2 \,\}
+$$
+has no rational supremum, even though it is bounded above (by, say, $2$).
+
+## Quick identity check
+
+For any $a, b \in \mathbb{R}$ with $a \neq 0$:
+$$
+\frac{a}{b} = a \cdot b^{-1}, \qquad (ab)^{-1} = a^{-1} b^{-1}.
+$$
+
+[Source: Wikipedia](https://en.wikipedia.org/wiki/Real_number#Formal_definitions)
 
  
