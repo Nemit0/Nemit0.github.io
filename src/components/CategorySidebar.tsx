@@ -134,7 +134,7 @@ export default function CategorySidebar({
       {/* Mobile hamburger button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-14 z-50 md:hidden p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="fixed top-4 left-16 z-50 md:hidden p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label="Toggle category menu"
         aria-expanded={isMobileOpen}
       >
@@ -178,7 +178,23 @@ export default function CategorySidebar({
             className="fixed top-0 left-0 z-50 w-64 h-full bg-white dark:bg-gray-900 p-4 overflow-y-auto md:hidden"
             role="dialog"
             aria-label="Category menu"
+            aria-modal="true"
+            tabIndex={-1}
           >
+            <button
+              onClick={() => setIsMobileOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded-md text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Close category menu"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             {sidebarContent}
           </aside>
         </>
