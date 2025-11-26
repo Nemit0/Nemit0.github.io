@@ -99,6 +99,31 @@ function collectPostFiles(dir: string, categoryPath = '', isRoot = true): PostFi
 }
 
 /**
+ * Collect category directory paths even if they do not yet contain posts
+ */
+function collectCategoryDirectories(dir: string, categoryPath = ''): string[] {
+  const categories: string[] = [];
+
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      if (!entry.isDirectory() || isPageDirectory(entry.name)) {
+        continue;
+      }
+
+      const nextCategory = categoryPath ? `${categoryPath}/${entry.name}` : entry.name;
+      categories.push(nextCategory);
+      categories.push(...collectCategoryDirectories(path.join(dir, entry.name), nextCategory));
+    }
+  } catch (error) {
+    return [];
+  }
+
+  return categories;
+}
+
+/**
  * Read and parse a markdown file
  */
 function readPostFile(
@@ -208,11 +233,20 @@ export function getCategories(): Category[] {
   const files = collectPostFiles(contentDirectory);
   const categoryCounts = new Map<string, Set<string>>();
 
+  // Count posts per category from existing posts
   for (const file of files) {
     if (!categoryCounts.has(file.category)) {
       categoryCounts.set(file.category, new Set<string>());
     }
     categoryCounts.get(file.category)!.add(file.slug);
+  }
+
+  // Include categories that exist on disk even if they have zero posts
+  const categoryDirs = collectCategoryDirectories(contentDirectory);
+  for (const categoryPath of categoryDirs) {
+    if (!categoryCounts.has(categoryPath)) {
+      categoryCounts.set(categoryPath, new Set<string>());
+    }
   }
 
   return Array.from(categoryCounts.entries()).map(([category, slugs]) => ({
@@ -229,11 +263,24 @@ export function getCategories(): Category[] {
  */
 export function getCategoryTree(lang: Language): CategoryNode[] {
   const allPosts = getAllPosts(lang);
+  const categoryCounts = new Map<string, number>();
+  const categoryPaths = new Set<string>();
   const categoryMap = new Map<string, CategoryNode>();
 
-  // Build tree from category paths
+  // Seed category paths and counts from posts
   for (const post of allPosts) {
     const categoryPath = post.frontmatter.category;
+    categoryPaths.add(categoryPath);
+    categoryCounts.set(categoryPath, (categoryCounts.get(categoryPath) ?? 0) + 1);
+  }
+
+  // Include categories that exist on disk even if they have zero posts
+  for (const categoryPath of collectCategoryDirectories(contentDirectory)) {
+    categoryPaths.add(categoryPath);
+  }
+
+  // Build tree nodes for all known categories
+  for (const categoryPath of categoryPaths) {
     const parts = categoryPath.split('/');
     let currentPath = '';
 
@@ -261,10 +308,10 @@ export function getCategoryTree(lang: Language): CategoryNode[] {
       }
     }
 
-    // Increment count for the full category path
+    // Seed leaf counts with direct post counts if any
     const leafCategory = categoryMap.get(categoryPath);
     if (leafCategory) {
-      leafCategory.count++;
+      leafCategory.count = categoryCounts.get(categoryPath) ?? 0;
     }
   }
 
