@@ -11,21 +11,20 @@ permissions:
   contents: write
   pull-requests: write
 
-env:
-  CONTENT_BRANCH: content
-  MAIN_BRANCH: main
-
 jobs:
   content-to-main:
-    if: github.ref == format('refs/heads/{0}', env.CONTENT_BRANCH) && github.actor != 'github-actions[bot]'
+    if: ${{ github.ref == 'refs/heads/content' && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
+    env:
+      SOURCE_BRANCH: content
+      TARGET_BRANCH: main
     steps:
       - name: Ensure target branch exists
         id: check
         uses: actions/github-script@v7
         with:
           script: |
-            const branch = process.env.MAIN_BRANCH;
+            const branch = process.env.TARGET_BRANCH;
             try {
               await github.rest.git.getRef({
                 owner: context.repo.owner,
@@ -37,25 +36,35 @@ jobs:
               core.info(`Branch ${branch} not found, skipping merge.`);
               core.setOutput('exists', 'false');
             }
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+          fetch-depth: 0
+
       - name: Merge content into main
         if: steps.check.outputs.exists == 'true'
-        uses: peter-evans/merge-branch@v6
-        with:
-          head: ${{ env.CONTENT_BRANCH }}
-          base: ${{ env.MAIN_BRANCH }}
-          commit_message_template: "chore: sync content -> main"
-          merge_method: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin $TARGET_BRANCH $SOURCE_BRANCH
+          git switch --detach origin/$TARGET_BRANCH
+          git merge --no-ff --no-edit origin/$SOURCE_BRANCH
+          git push origin HEAD:$TARGET_BRANCH
 
   main-to-content:
-    if: github.ref == format('refs/heads/{0}', env.MAIN_BRANCH) && github.actor != 'github-actions[bot]'
+    if: ${{ github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
+    env:
+      SOURCE_BRANCH: main
+      TARGET_BRANCH: content
     steps:
       - name: Ensure target branch exists
         id: check
         uses: actions/github-script@v7
         with:
           script: |
-            const branch = process.env.CONTENT_BRANCH;
+            const branch = process.env.TARGET_BRANCH;
             try {
               await github.rest.git.getRef({
                 owner: context.repo.owner,
@@ -67,11 +76,18 @@ jobs:
               core.info(`Branch ${branch} not found, skipping merge.`);
               core.setOutput('exists', 'false');
             }
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_BRANCH }}
+          fetch-depth: 0
+
       - name: Merge main into content
         if: steps.check.outputs.exists == 'true'
-        uses: peter-evans/merge-branch@v6
-        with:
-          head: ${{ env.MAIN_BRANCH }}
-          base: ${{ env.CONTENT_BRANCH }}
-          commit_message_template: "chore: sync main -> content"
-          merge_method: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin $TARGET_BRANCH $SOURCE_BRANCH
+          git switch --detach origin/$TARGET_BRANCH
+          git merge --no-ff --no-edit origin/$SOURCE_BRANCH
+          git push origin HEAD:$TARGET_BRANCH
