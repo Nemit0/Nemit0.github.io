@@ -188,7 +188,7 @@ export default function CategorySidebar({
       <aside
         className={`
           hidden md:block w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700
-          self-stretch
+          self-stretch md:min-h-screen
           ${className}
         `}
       >
