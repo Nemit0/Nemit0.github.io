@@ -1,9 +1,9 @@
 ---
-title: "Field Axioms"
-description: "Introduction to Analytics and Field Axioms."
+title: "Vector Space"
+description: "Introduction to Vector Spaces in Mathematics"
 date: "2025-11-26"
 category: "math"
-tags: ["math", "analytics"]
+tags: ["math", "vector space", "linear algebra"]
 author: "Nemit"
 featured: false
 pinned: false
