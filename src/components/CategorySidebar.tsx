@@ -188,11 +188,13 @@ export default function CategorySidebar({
       <aside
         className={`
           hidden md:block w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700
-          sticky top-[4.5rem] h-screen overflow-y-auto p-4
+          self-stretch
           ${className}
         `}
       >
-        {sidebarContent}
+        <div className="sticky top-[4.5rem] max-h-[calc(100vh-4.5rem)] overflow-y-auto p-4">
+          {sidebarContent}
+        </div>
       </aside>
 
       {/* Mobile overlay */}
