@@ -8,12 +8,12 @@ import BlogPostList from '@/components/BlogPostList';
 interface PageProps {
   params: Promise<{
     lang: string;
-    category: string;
+    category: string[];
   }>;
 }
 
 export async function generateStaticParams() {
-  const params: { lang: string; category: string }[] = [];
+  const params: { lang: string; category: string[] }[] = [];
   const categories = getCategories();
 
   // Generate params for both languages and all categories
@@ -21,7 +21,7 @@ export async function generateStaticParams() {
     for (const category of categories) {
       params.push({
         lang,
-        category: category.slug,
+        category: category.slug.split('/'),
       });
     }
   }
@@ -31,9 +31,9 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { lang, category } = await params;
-  const decodedCategory = decodeURIComponent(category);
+  const categoryPath = category.map(decodeURIComponent).join('/');
   const categories = getCategories();
-  const categoryData = categories.find(c => c.slug === decodedCategory);
+  const categoryData = categories.find(c => c.slug === categoryPath);
 
   if (!categoryData) {
     return {
@@ -54,19 +54,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CategoryPage({ params }: PageProps) {
   const { lang, category } = await params;
-  const decodedCategory = decodeURIComponent(category);
+  const categoryPath = category.map(decodeURIComponent).join('/');
   const t = getTranslations(lang as Language);
 
   // Get all categories to verify this one exists
   const categories = getCategories();
-  const categoryData = categories.find(c => c.slug === decodedCategory);
+  const categoryData = categories.find(c => c.slug === categoryPath);
 
   if (!categoryData) {
     notFound();
   }
 
   // Get posts in this category
-  const posts = getPostsByCategory(decodedCategory, lang as Language);
+  const posts = getPostsByCategory(categoryPath, lang as Language);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
