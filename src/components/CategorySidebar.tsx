@@ -10,6 +10,9 @@ interface CategorySidebarProps {
   categories: CategoryNode[];
   currentCategory?: string;
   className?: string;
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
+  showInternalMobileTrigger?: boolean;
 }
 
 interface CategoryItemProps {
@@ -90,12 +93,23 @@ export default function CategorySidebar({
   categories,
   currentCategory,
   className = '',
+  mobileOpen,
+  onMobileOpenChange,
+  showInternalMobileTrigger = true,
 }: CategorySidebarProps) {
   // Default: expand all root-level categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(categories.map(c => c.slug))
   );
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+
+  const isMobileOpen = mobileOpen ?? internalMobileOpen;
+  const setIsMobileOpen = (open: boolean) => {
+    onMobileOpenChange?.(open);
+    if (mobileOpen === undefined) {
+      setInternalMobileOpen(open);
+    }
+  };
 
   const toggleExpand = (slug: string) => {
     setExpandedCategories((prev) => {
@@ -138,34 +152,40 @@ export default function CategorySidebar({
   return (
     <>
       {/* Mobile hamburger button */}
-      <button
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-16 z-50 md:hidden p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="Toggle category menu"
-        aria-expanded={isMobileOpen}
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      {showInternalMobileTrigger && (
+        <button
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="
+            md:hidden self-start ml-4 mt-3 mb-2 inline-flex items-center justify-center
+            p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white shadow
+            focus:outline-none focus:ring-2 focus:ring-blue-500
+          "
+          aria-label="Toggle category menu"
+          aria-expanded={isMobileOpen}
         >
-          {isMobileOpen ? (
-            <path d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
-      </button>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            {isMobileOpen ? (
+              <path d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
+      )}
 
       {/* Desktop sidebar */}
       <aside
         className={`
           hidden md:block w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700
-          sticky top-0 h-screen overflow-y-auto p-4
+          sticky top-[4.5rem] h-screen overflow-y-auto p-4
           ${className}
         `}
       >

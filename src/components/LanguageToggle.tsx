@@ -6,9 +6,14 @@ import { type Language, languages } from '@/lib/i18n';
 interface LanguageToggleProps {
   currentLang: Language;
   className?: string;
+  floating?: boolean;
 }
 
-export default function LanguageToggle({ currentLang, className = '' }: LanguageToggleProps) {
+export default function LanguageToggle({
+  currentLang,
+  className = '',
+  floating = true,
+}: LanguageToggleProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -32,7 +37,11 @@ export default function LanguageToggle({ currentLang, className = '' }: Language
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 flex rounded-full bg-gray-200 dark:bg-gray-700 p-1 ${className}`}
+      className={`
+        flex rounded-full bg-gray-200 dark:bg-gray-700 p-1
+        ${floating ? 'fixed top-4 right-4 z-50' : ''}
+        ${className}
+      `}
       role="group"
       aria-label="Language selection"
     >
