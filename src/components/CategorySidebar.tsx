@@ -55,7 +55,10 @@ function CategoryItem({
         {!hasChildren && <span className="w-4" />}
 
         <Link
-          href={`/${lang}/category/${encodeURIComponent(node.slug)}`}
+          href={`/${lang}/category/${node.slug
+            .split('/')
+            .map(encodeURIComponent)
+            .join('/')}`}
           className={`
             flex-1 text-sm
             ${
