@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import { getAllPosts, getPostBySlug, getAlternateLanguage } from '@/lib/posts';
 import { type Language, getTranslations, languageNames } from '@/lib/i18n';
+import { buildCategoryHref } from '@/lib/paths';
 import MarkdownContent from '@/components/MarkdownContent';
 
 interface PageProps {
@@ -73,10 +74,7 @@ export default async function PostPage({ params }: PageProps) {
         {/* Category */}
         <div className="mb-4">
           <Link
-            href={`/${lang}/category/${post.frontmatter.category
-              .split('/')
-              .map(encodeURIComponent)
-              .join('/')}`}
+            href={buildCategoryHref(lang, post.frontmatter.category)}
             className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition"
           >
             {post.frontmatter.category}

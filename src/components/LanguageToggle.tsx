@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { type Language, languages } from '@/lib/i18n';
+import { replaceLanguageInPath } from '@/lib/paths';
 
 interface LanguageToggleProps {
   currentLang: Language;
@@ -20,19 +21,7 @@ export default function LanguageToggle({
   const switchLanguage = (newLang: Language) => {
     if (newLang === currentLang) return;
 
-    // Extract path without language prefix
-    // pathname is like "/en/posts/my-post" or "/ko"
-    const pathParts = pathname.split('/').filter(Boolean);
-
-    // Remove current language from path
-    if (pathParts[0] === currentLang) {
-      pathParts.shift();
-    }
-
-    // Construct new path with new language
-    const newPath = `/${newLang}${pathParts.length > 0 ? '/' + pathParts.join('/') : ''}`;
-
-    router.push(newPath);
+    router.push(replaceLanguageInPath(pathname, newLang));
   };
 
   return (

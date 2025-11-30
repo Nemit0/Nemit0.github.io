@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { type Language } from '@/lib/i18n';
 import { type CategoryNode } from '@/types/post';
+import { buildCategoryHref } from '@/lib/paths';
 
 interface CategorySidebarProps {
   lang: Language;
@@ -57,10 +58,7 @@ function CategoryItem({
         {!hasChildren && <span className="w-4 h-4 flex-shrink-0" aria-hidden="true" />}
 
         <Link
-          href={`/${lang}/category/${node.slug
-            .split('/')
-            .map(encodeURIComponent)
-            .join('/')}`}
+          href={buildCategoryHref(lang, node.slug)}
           className={`
             flex-1 text-sm
             ${
