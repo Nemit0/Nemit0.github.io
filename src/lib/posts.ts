@@ -249,11 +249,16 @@ export function getCategories(): Category[] {
     }
   }
 
-  return Array.from(categoryCounts.entries()).map(([category, slugs]) => ({
+  const categories = Array.from(categoryCounts.entries()).map(([category, slugs]) => ({
     name: category,
     slug: category,
     postCount: slugs.size,
   }));
+
+  // Sort alphabetically by category name (English locale)
+  categories.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+
+  return categories;
 }
 
 /**
@@ -325,6 +330,14 @@ export function getCategoryTree(lang: Language): CategoryNode[] {
     return total;
   }
 
+  // Sort children alphabetically (recursive)
+  function sortChildren(node: CategoryNode): void {
+    if (node.children.length > 0) {
+      node.children.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+      node.children.forEach(sortChildren);
+    }
+  }
+
   // Return root-level categories
   const roots = Array.from(categoryMap.values()).filter(
     node => !node.slug.includes('/')
@@ -332,6 +345,12 @@ export function getCategoryTree(lang: Language): CategoryNode[] {
 
   // Propagate counts for each root
   roots.forEach(root => propagateCounts(root));
+
+  // Sort root categories alphabetically by English name
+  roots.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+
+  // Sort all children recursively
+  roots.forEach(sortChildren);
 
   return roots;
 }
