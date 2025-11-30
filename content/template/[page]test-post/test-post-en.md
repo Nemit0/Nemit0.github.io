@@ -100,7 +100,6 @@ $$
 
 > This is a blockquote.
 > It can span multiple lines.
->
 > And multiple paragraphs.
 
 ### Images
