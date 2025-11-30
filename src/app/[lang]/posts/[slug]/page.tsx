@@ -58,14 +58,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PostPage({ params }: PageProps) {
   const { lang, slug } = await params;
-  const post = await getPostBySlug(slug, lang as Language);
+  const langTyped = lang as Language;
+  const post = await getPostBySlug(slug, langTyped);
 
   if (!post) {
     notFound();
   }
 
-  const t = getTranslations(lang as Language);
-  const alternateLang = getAlternateLanguage(slug, lang as Language);
+  const t = getTranslations(langTyped);
+  const alternateLang = getAlternateLanguage(slug, langTyped);
 
   return (
     <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -74,7 +75,7 @@ export default async function PostPage({ params }: PageProps) {
         {/* Category */}
         <div className="mb-4">
           <Link
-            href={buildCategoryHref(lang, post.frontmatter.category)}
+            href={buildCategoryHref(langTyped, post.frontmatter.category)}
             className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition"
           >
             {post.frontmatter.category}
