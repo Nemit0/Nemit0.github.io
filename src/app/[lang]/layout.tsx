@@ -5,6 +5,8 @@ import { isValidLanguage, type Language, languageNames } from "@/lib/i18n";
 import { getCategoryTree } from "@/lib/posts";
 import AppShell from "@/components/AppShell";
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   return [{ lang: 'en' }, { lang: 'ko' }];
 }

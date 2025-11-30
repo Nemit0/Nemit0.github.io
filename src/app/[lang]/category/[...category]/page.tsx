@@ -12,6 +12,8 @@ interface PageProps {
   }>;
 }
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   const params: { lang: string; category: string[] }[] = [];
   const categories = getCategories();

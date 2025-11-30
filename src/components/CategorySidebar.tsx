@@ -35,24 +35,26 @@ function CategoryItem({
   const isExpanded = expandedCategories.has(node.slug);
   const hasChildren = node.children.length > 0;
   const isActive = currentCategory === node.slug;
+  const paddingLeft = 0.5 + level * 1.25;
 
   return (
     <div>
       <div
         className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-        style={{ paddingLeft: `${level * 1 + 0.5}rem` }}
+        style={{ paddingLeft: `${paddingLeft}rem` }}
       >
         {hasChildren && (
           <button
             onClick={() => toggleExpand(node.slug)}
+            type="button"
             aria-expanded={isExpanded}
             aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.name} category`}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
           >
             {isExpanded ? '▾' : '▸'}
           </button>
         )}
-        {!hasChildren && <span className="w-4" />}
+        {!hasChildren && <span className="w-4 h-4 flex-shrink-0" aria-hidden="true" />}
 
         <Link
           href={`/${lang}/category/${node.slug
