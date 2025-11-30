@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import { getAllPosts, getPostBySlug, getAlternateLanguage } from '@/lib/posts';
-import { type Language, getTranslations, languageNames } from '@/lib/i18n';
+import { type Language, getTranslations, languageNames, languages } from '@/lib/i18n';
 import { buildCategoryHref } from '@/lib/paths';
 import MarkdownContent from '@/components/MarkdownContent';
 
@@ -18,7 +18,7 @@ export async function generateStaticParams() {
   const params: { lang: string; slug: string }[] = [];
 
   // Generate params for both languages
-  for (const lang of ['en', 'ko'] as const) {
+  for (const lang of languages) {
     const posts = getAllPosts(lang);
     for (const post of posts) {
       params.push({
