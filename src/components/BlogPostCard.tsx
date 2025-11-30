@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import type { Post } from '@/types/post';
 import type { Language } from '@/lib/i18n';
+import { buildCategoryHref } from '@/lib/paths';
 
 interface BlogPostCardProps {
   post: Post;
@@ -28,10 +29,7 @@ export default function BlogPostCard({ post, lang }: BlogPostCardProps) {
         {/* Category & Date */}
         <div className="flex items-center justify-between mb-3">
           <Link
-            href={`/${lang}/category/${post.frontmatter.category
-              .split('/')
-              .map(encodeURIComponent)
-              .join('/')}`}
+            href={buildCategoryHref(lang, post.frontmatter.category)}
             className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 uppercase tracking-wide"
           >
             {post.frontmatter.category}

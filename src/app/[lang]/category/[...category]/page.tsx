@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getPostsByCategory, getCategories } from '@/lib/posts';
-import { type Language, getTranslations } from '@/lib/i18n';
+import { type Language, getTranslations, languages } from '@/lib/i18n';
 import BlogPostList from '@/components/BlogPostList';
 
 interface PageProps {
@@ -19,7 +19,7 @@ export async function generateStaticParams() {
   const categories = getCategories();
 
   // Generate params for both languages and all categories
-  for (const lang of ['en', 'ko'] as const) {
+  for (const lang of languages) {
     for (const category of categories) {
       params.push({
         lang,
