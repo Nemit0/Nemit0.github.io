@@ -24,6 +24,7 @@ export const translations = {
     publishedOn: 'Published on',
     author: 'Author',
     tags: 'Tags',
+    backToAllPosts: 'Back to all posts',
   },
   ko: {
     home: '홈',
@@ -36,6 +37,7 @@ export const translations = {
     publishedOn: '게시일',
     author: '작성자',
     tags: '태그',
+    backToAllPosts: '모든 포스트 보기',
   },
 };
 
