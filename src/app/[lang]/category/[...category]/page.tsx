@@ -150,10 +150,10 @@ export default async function CategoryPage({ params }: PageProps) {
         }
       />
 
-      {/* Back to all categories */}
+      {/* Back to all posts */}
       <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
         <Link
-          href={`/${lang}/about`}
+          href={`/${lang}`}
           className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
         >
           <svg
@@ -169,7 +169,7 @@ export default async function CategoryPage({ params }: PageProps) {
               d="M15 19l-7-7 7-7"
             />
           </svg>
-          {lang === 'ko' ? '매인 페이지로 돌아가기' : 'Back to Main Page'}
+          {t.backToAllPosts}
         </Link>
       </div>
     </div>
