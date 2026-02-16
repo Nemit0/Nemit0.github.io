@@ -12,8 +12,8 @@ export default function HomeLink({ lang, floating = true, className = '' }: Home
   const positioning = floating ? 'fixed top-4 left-4 z-50' : '';
   return (
     <Link
-      href={`/${lang}/about`}
-      aria-label="Go to about page"
+      href={`/${lang}`}
+      aria-label="Go to home page"
       className={`
         inline-flex items-center justify-center h-10 w-10 rounded-md
         bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white shadow

@@ -98,6 +98,16 @@ function collectPostFiles(dir: string, categoryPath = '', isRoot = true): PostFi
   return files;
 }
 
+// Cache for post file references
+let postFileCache: PostFileRef[] | null = null;
+
+function getPostFiles(): PostFileRef[] {
+  if (!postFileCache) {
+    postFileCache = collectPostFiles(contentDirectory);
+  }
+  return postFileCache;
+}
+
 /**
  * Collect category directory paths even if they do not yet contain posts
  */
@@ -170,7 +180,7 @@ function readPostFile(
  * @returns Array of posts sorted by date (newest first)
  */
 export function getAllPosts(lang: Language): Post[] {
-  const files = collectPostFiles(contentDirectory);
+  const files = getPostFiles();
   const posts: Post[] = [];
 
   for (const file of files) {
@@ -197,21 +207,23 @@ export function getAllPosts(lang: Language): Post[] {
  * @returns Post with HTML content or null if not found
  */
 export async function getPostBySlug(slug: string, lang: Language): Promise<PostWithHtml | null> {
-  const files = collectPostFiles(contentDirectory);
+  const file = getPostFiles().find(f => f.slug === slug && f.lang === lang);
 
-  for (const file of files) {
-    if (file.slug === slug && file.lang === lang) {
-      const post = readPostFile(file.filePath, file.category, {
-        slug: file.slug,
-        lang: file.lang,
-      });
-      if (!post) continue;
-      const html = await markdownToHtml(post.content);
-      return { ...post, html };
-    }
+  if (!file) {
+    return null;
   }
 
-  return null;
+  const post = readPostFile(file.filePath, file.category, {
+    slug: file.slug,
+    lang: file.lang,
+  });
+
+  if (!post) {
+    return null;
+  }
+
+  const html = await markdownToHtml(post.content);
+  return { ...post, html };
 }
 
 /**
@@ -221,8 +233,22 @@ export async function getPostBySlug(slug: string, lang: Language): Promise<PostW
  * @returns Array of posts in the category
  */
 export function getPostsByCategory(category: string, lang: Language): Post[] {
-  const allPosts = getAllPosts(lang);
-  return allPosts.filter(post => post.frontmatter.category === category);
+  const files = getPostFiles().filter(
+    file => file.category === category && file.lang === lang
+  );
+
+  const posts = files
+    .map(file =>
+      readPostFile(file.filePath, file.category, {
+        slug: file.slug,
+        lang: file.lang,
+      })
+    )
+    .filter((post): post is Post => post !== null);
+
+  return posts.sort(
+    (a, b) => new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime()
+  );
 }
 
 /**
@@ -230,7 +256,7 @@ export function getPostsByCategory(category: string, lang: Language): Post[] {
  * @returns Array of categories
  */
 export function getCategories(): Category[] {
-  const files = collectPostFiles(contentDirectory);
+  const files = getPostFiles();
   const categoryCounts = new Map<string, Set<string>>();
 
   // Count posts per category from existing posts
@@ -261,36 +287,22 @@ export function getCategories(): Category[] {
   return categories;
 }
 
-/**
- * Get hierarchical category tree with post counts
- * @param lang - Language code
- * @returns Array of root-level category nodes
- */
-export function getCategoryTree(lang: Language): CategoryNode[] {
-  const allPosts = getAllPosts(lang);
-  const categoryCounts = new Map<string, number>();
-  const categoryPaths = new Set<string>();
+function getAllCategoryPaths(lang: Language): Set<string> {
+  const paths = new Set<string>();
+  const posts = getAllPosts(lang);
+  posts.forEach(post => paths.add(post.frontmatter.category));
+  collectCategoryDirectories(contentDirectory).forEach(dir => paths.add(dir));
+  return paths;
+}
+
+function buildCategoryTree(paths: Set<string>): CategoryNode[] {
   const categoryMap = new Map<string, CategoryNode>();
 
-  // Seed category paths and counts from posts
-  for (const post of allPosts) {
-    const categoryPath = post.frontmatter.category;
-    categoryPaths.add(categoryPath);
-    categoryCounts.set(categoryPath, (categoryCounts.get(categoryPath) ?? 0) + 1);
-  }
-
-  // Include categories that exist on disk even if they have zero posts
-  for (const categoryPath of collectCategoryDirectories(contentDirectory)) {
-    categoryPaths.add(categoryPath);
-  }
-
-  // Build tree nodes for all known categories
-  for (const categoryPath of categoryPaths) {
+  for (const categoryPath of paths) {
     const parts = categoryPath.split('/');
     let currentPath = '';
 
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
+    for (const part of parts) {
       const parentPath = currentPath;
       currentPath = currentPath ? `${currentPath}/${part}` : part;
 
@@ -303,54 +315,41 @@ export function getCategoryTree(lang: Language): CategoryNode[] {
         };
         categoryMap.set(currentPath, node);
 
-        // Link to parent
         if (parentPath) {
           const parent = categoryMap.get(parentPath);
-          if (parent && !parent.children.find(c => c.slug === currentPath)) {
+          if (parent) {
             parent.children.push(node);
           }
         }
       }
     }
-
-    // Seed leaf counts with direct post counts if any
-    const leafCategory = categoryMap.get(categoryPath);
-    if (leafCategory) {
-      leafCategory.count = categoryCounts.get(categoryPath) ?? 0;
-    }
   }
 
-  // Propagate counts up the tree (parent counts include children)
-  function propagateCounts(node: CategoryNode): number {
-    let total = node.count;
-    for (const child of node.children) {
-      total += propagateCounts(child);
-    }
-    node.count = total;
-    return total;
+  return Array.from(categoryMap.values()).filter(node => !node.slug.includes('/'));
+}
+
+function addPostCountsToTree(node: CategoryNode, lang: Language): void {
+  node.count = getPostsByCategory(node.slug, lang).length;
+  node.children.forEach(child => addPostCountsToTree(child, lang));
+}
+
+function sortCategoryTree(node: CategoryNode): void {
+  if (node.children.length > 0) {
+    node.children.sort((a, b) => a.name.localeCompare(b.name, 'en'));
+    node.children.forEach(sortCategoryTree);
   }
+}
 
-  // Sort children alphabetically (recursive)
-  function sortChildren(node: CategoryNode): void {
-    if (node.children.length > 0) {
-      node.children.sort((a, b) => a.name.localeCompare(b.name, 'en'));
-      node.children.forEach(sortChildren);
-    }
-  }
+export function getCategoryTree(lang: Language): CategoryNode[] {
+  const categoryPaths = getAllCategoryPaths(lang);
+  const roots = buildCategoryTree(categoryPaths);
 
-  // Return root-level categories
-  const roots = Array.from(categoryMap.values()).filter(
-    node => !node.slug.includes('/')
-  );
+  roots.forEach(root => {
+    addPostCountsToTree(root, lang);
+    sortCategoryTree(root);
+  });
 
-  // Propagate counts for each root
-  roots.forEach(root => propagateCounts(root));
-
-  // Sort root categories alphabetically by English name
   roots.sort((a, b) => a.name.localeCompare(b.name, 'en'));
-
-  // Sort all children recursively
-  roots.forEach(sortChildren);
 
   return roots;
 }
@@ -411,15 +410,7 @@ export function getRecentPosts(lang: Language, limit: number = 10): Post[] {
  * @returns True if post exists
  */
 export function postExists(slug: string, lang: Language): boolean {
-  const files = collectPostFiles(contentDirectory);
-
-  for (const file of files) {
-    if (file.slug === slug && file.lang === lang) {
-      return true;
-    }
-  }
-
-  return false;
+  return getPostFiles().some(file => file.slug === slug && file.lang === lang);
 }
 
 /**
