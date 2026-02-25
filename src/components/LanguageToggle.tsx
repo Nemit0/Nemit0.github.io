@@ -27,7 +27,7 @@ export default function LanguageToggle({
   return (
     <div
       className={`
-        flex rounded-full bg-gray-200 dark:bg-gray-700 p-1
+        flex rounded-lg bg-stone-100 dark:bg-stone-800 p-0.5
         ${floating ? 'fixed top-4 right-4 z-50' : ''}
         ${className}
       `}
@@ -41,12 +41,12 @@ export default function LanguageToggle({
           aria-pressed={currentLang === lang}
           aria-label={`Switch to ${lang === 'en' ? 'English' : 'Korean'}`}
           className={`
-            px-4 py-2 rounded-full text-sm font-medium transition-colors
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+            px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-all duration-150
+            focus:outline-none focus:ring-2 focus:ring-blue-500
             ${
               currentLang === lang
-                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm'
+                : 'text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
             }
           `}
         >

@@ -8,7 +8,19 @@ const config: Config = {
   ],
   darkMode: 'media',
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['var(--font-newsreader)', 'Georgia', 'Cambria', 'serif'],
+      },
+      colors: {
+        surface: {
+          DEFAULT: 'var(--color-bg)',
+          elevated: 'var(--color-bg-elevated)',
+          subtle: 'var(--color-bg-subtle)',
+        },
+      },
+    },
   },
   plugins: [],
 };

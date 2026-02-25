@@ -36,12 +36,12 @@ function CategoryItem({
   const isExpanded = expandedCategories.has(node.slug);
   const hasChildren = node.children.length > 0;
   const isActive = currentCategory === node.slug;
-  const paddingLeft = 0.5 + level * 1.25;
+  const paddingLeft = 0.75 + level * 1;
 
   return (
     <div>
       <div
-        className="flex items-center gap-2 py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+        className="flex items-center gap-1.5 py-1.5 px-2 hover:bg-stone-100 dark:hover:bg-stone-800/60 rounded-lg transition-colors"
         style={{ paddingLeft: `${paddingLeft}rem` }}
       >
         {hasChildren && (
@@ -50,9 +50,11 @@ function CategoryItem({
             type="button"
             aria-expanded={isExpanded}
             aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.name} category`}
-            className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 focus:outline-none rounded transition-colors"
           >
-            {isExpanded ? '▾' : '▸'}
+            <svg className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         )}
         {!hasChildren && <span className="w-4 h-4 flex-shrink-0" aria-hidden="true" />}
@@ -60,15 +62,17 @@ function CategoryItem({
         <Link
           href={buildCategoryHref(lang, node.slug)}
           className={`
-            flex-1 text-sm
+            flex-1 text-[13px] leading-snug
             ${
               isActive
                 ? 'font-semibold text-blue-600 dark:text-blue-400'
-                : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
             }
+            transition-colors
           `}
         >
-          {node.name} ({node.count})
+          {node.name}
+          <span className="ml-1 text-stone-400 dark:text-stone-600 text-[11px]">({node.count})</span>
         </Link>
       </div>
 
@@ -128,9 +132,11 @@ export default function CategorySidebar({
 
   const sidebarContent = (
     <nav aria-label="Category navigation" className="h-full">
-      <div className="h-10" aria-hidden="true" />
-      <h2 className="text-lg font-bold mb-4 px-2 text-gray-900 dark:text-white">Categories</h2>
-      <div className="space-y-1">
+      <div className="h-4" aria-hidden="true" />
+      <h2 className="text-xs font-semibold uppercase tracking-wider mb-3 px-3 text-stone-400 dark:text-stone-500">
+        Categories
+      </h2>
+      <div className="space-y-0.5">
         {categories.map((category) => (
           <CategoryItem
             key={category.slug}
@@ -147,7 +153,7 @@ export default function CategorySidebar({
   );
 
   const mobilePanelClasses = `
-    fixed top-0 left-0 z-50 w-64 h-full bg-white dark:bg-gray-900 p-4 overflow-y-auto md:hidden
+    fixed top-0 left-0 z-50 w-64 h-full bg-white dark:bg-neutral-900 p-4 overflow-y-auto md:hidden
     transform transition-transform duration-300 ease-in-out
     ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
   `;
@@ -160,18 +166,19 @@ export default function CategorySidebar({
           onClick={() => setIsMobileOpen(!isMobileOpen)}
           className="
             md:hidden self-start ml-4 mt-3 mb-2 inline-flex items-center justify-center
-            p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white shadow
+            p-2 rounded-lg text-stone-600 dark:text-stone-400
+            hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors
             focus:outline-none focus:ring-2 focus:ring-blue-500
           "
           aria-label="Toggle category menu"
           aria-expanded={isMobileOpen}
         >
           <svg
-            className="w-6 h-6"
+            className="w-5 h-5"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="2"
+            strokeWidth="1.5"
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
@@ -187,12 +194,12 @@ export default function CategorySidebar({
       {/* Desktop sidebar */}
       <aside
         className={`
-          hidden md:block w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700
-          self-stretch md:min-h-screen
+          hidden md:block w-56 lg:w-60 border-r border-stone-200 dark:border-stone-800
+          self-stretch
           ${className}
         `}
       >
-        <div className="sticky top-[4.5rem] max-h-[calc(100vh-4.5rem)] overflow-y-auto p-4">
+        <div className="sticky top-[3.5rem] max-h-[calc(100vh-3.5rem)] overflow-y-auto p-3">
           {sidebarContent}
         </div>
       </aside>
@@ -201,7 +208,7 @@ export default function CategorySidebar({
       {isMobileOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity duration-200"
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden transition-opacity duration-200"
             onClick={() => setIsMobileOpen(false)}
             aria-hidden="true"
           />
@@ -217,7 +224,7 @@ export default function CategorySidebar({
       >
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="absolute top-3 right-3 p-2 rounded-md text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="absolute top-3 right-3 p-2 rounded-lg text-stone-400 hover:text-stone-700 dark:text-stone-500 dark:hover:text-stone-200 focus:outline-none transition-colors"
           aria-label="Close category menu"
         >
           <svg

@@ -45,18 +45,18 @@ export default async function AboutPage({ params }: PageProps) {
   const alternateLang = lang === 'en' ? 'ko' : 'en';
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-3xl mx-auto py-8 sm:py-12">
       {/* Header */}
-      <header className="mb-8">
+      <header className="mb-10">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 dark:text-stone-100 tracking-tight">
             {pageData.title}
           </h1>
 
           {/* Language switcher */}
           <Link
             href={`/${alternateLang}/about`}
-            className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition text-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
           >
             <svg
               className="w-4 h-4"
@@ -76,16 +76,18 @@ export default async function AboutPage({ params }: PageProps) {
         </div>
       </header>
 
+      <hr className="border-stone-200 dark:border-stone-800 mb-10" />
+
       {/* Content */}
       <article className="mb-12">
         <MarkdownContent html={pageData.html} />
       </article>
 
       {/* Footer */}
-      <footer className="pt-8 border-t border-gray-200 dark:border-gray-800">
+      <footer className="pt-8 border-t border-stone-200 dark:border-stone-800">
         <Link
           href={`/${lang}`}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors"
         >
           ← {t.home}
         </Link>

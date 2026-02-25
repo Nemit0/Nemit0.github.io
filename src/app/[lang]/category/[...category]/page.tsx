@@ -71,68 +71,35 @@ export default async function CategoryPage({ params }: PageProps) {
   const posts = getPostsByCategory(categoryPath, lang as Language);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="py-8 sm:py-12">
       {/* Breadcrumb */}
-      <nav className="mb-8" aria-label="Breadcrumb">
-        <ol className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+      <nav className="mb-6" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-1.5 text-sm text-stone-400 dark:text-stone-500">
           <li>
             <Link
               href={`/${lang}`}
-              className="hover:text-blue-600 dark:hover:text-blue-400 transition"
+              className="hover:text-stone-700 dark:hover:text-stone-300 transition-colors"
             >
               {t.home}
             </Link>
           </li>
           <li>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </li>
-          <li>
-            <Link
-              href={`/${lang}`}
-              className="hover:text-blue-600 dark:hover:text-blue-400 transition"
-            >
-              {t.categories}
-            </Link>
-          </li>
-          <li>
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </li>
-          <li className="text-gray-900 dark:text-gray-100 font-medium capitalize">
+          <li className="text-stone-700 dark:text-stone-300 font-medium capitalize">
             {categoryData.name}
           </li>
         </ol>
       </nav>
 
       {/* Header */}
-      <header className="mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-gray-100 capitalize">
+      <header className="mb-10">
+        <h1 className="text-3xl font-bold mb-2 text-stone-900 dark:text-stone-100 tracking-tight capitalize">
           {categoryData.name}
         </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {lang === 'ko'
             ? `${categoryData.postCount}개의 포스트`
             : `${categoryData.postCount} ${categoryData.postCount === 1 ? 'post' : 'posts'}`}
@@ -151,23 +118,13 @@ export default async function CategoryPage({ params }: PageProps) {
       />
 
       {/* Back to all posts */}
-      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+      <div className="mt-12 pt-8 border-t border-stone-200 dark:border-stone-800">
         <Link
           href={`/${lang}`}
-          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+          className="inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           {t.backToAllPosts}
         </Link>

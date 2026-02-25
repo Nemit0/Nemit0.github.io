@@ -133,6 +133,16 @@ function collectCategoryDirectories(dir: string, categoryPath = ''): string[] {
   return categories;
 }
 
+// Cache for category directories
+let categoryDirCache: string[] | null = null;
+
+function getCategoryDirectories(): string[] {
+  if (!categoryDirCache) {
+    categoryDirCache = collectCategoryDirectories(contentDirectory);
+  }
+  return categoryDirCache;
+}
+
 /**
  * Read and parse a markdown file
  */
@@ -179,7 +189,12 @@ function readPostFile(
  * @param lang - Language code (en or ko)
  * @returns Array of posts sorted by date (newest first)
  */
+const allPostsCache = new Map<Language, Post[]>();
+
 export function getAllPosts(lang: Language): Post[] {
+  const cached = allPostsCache.get(lang);
+  if (cached) return cached;
+
   const files = getPostFiles();
   const posts: Post[] = [];
 
@@ -195,9 +210,12 @@ export function getAllPosts(lang: Language): Post[] {
   }
 
   // Sort by date (newest first)
-  return posts.sort((a, b) => {
-    return new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime();
-  });
+  posts.sort(
+    (a, b) => new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime()
+  );
+
+  allPostsCache.set(lang, posts);
+  return posts;
 }
 
 /**
@@ -230,25 +248,11 @@ export async function getPostBySlug(slug: string, lang: Language): Promise<PostW
  * Get all posts in a specific category
  * @param category - Category slug
  * @param lang - Language code
- * @returns Array of posts in the category
+ * @returns Array of posts in the category (already sorted by date)
  */
 export function getPostsByCategory(category: string, lang: Language): Post[] {
-  const files = getPostFiles().filter(
-    file => file.category === category && file.lang === lang
-  );
-
-  const posts = files
-    .map(file =>
-      readPostFile(file.filePath, file.category, {
-        slug: file.slug,
-        lang: file.lang,
-      })
-    )
-    .filter((post): post is Post => post !== null);
-
-  return posts.sort(
-    (a, b) => new Date(b.frontmatter.date).getTime() - new Date(a.frontmatter.date).getTime()
-  );
+  // Leverage the cached getAllPosts instead of re-reading files
+  return getAllPosts(lang).filter(post => post.frontmatter.category === category);
 }
 
 /**
@@ -268,7 +272,7 @@ export function getCategories(): Category[] {
   }
 
   // Include categories that exist on disk even if they have zero posts
-  const categoryDirs = collectCategoryDirectories(contentDirectory);
+  const categoryDirs = getCategoryDirectories();
   for (const categoryPath of categoryDirs) {
     if (!categoryCounts.has(categoryPath)) {
       categoryCounts.set(categoryPath, new Set<string>());
@@ -291,7 +295,7 @@ function getAllCategoryPaths(lang: Language): Set<string> {
   const paths = new Set<string>();
   const posts = getAllPosts(lang);
   posts.forEach(post => paths.add(post.frontmatter.category));
-  collectCategoryDirectories(contentDirectory).forEach(dir => paths.add(dir));
+  getCategoryDirectories().forEach(dir => paths.add(dir));
   return paths;
 }
 

@@ -17,8 +17,8 @@ export default function BlogPostList({
 }: BlogPostListProps) {
   if (posts.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 dark:text-gray-400">
+      <div className="text-center py-16">
+        <p className="text-stone-500 dark:text-stone-400">
           {emptyMessage ||
             (lang === 'en'
               ? 'No posts found. Check back soon!'
@@ -31,12 +31,12 @@ export default function BlogPostList({
   return (
     <section>
       {title && (
-        <h2 className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100">
+        <h2 className="text-2xl font-semibold mb-8 text-stone-900 dark:text-stone-100 tracking-tight">
           {title}
         </h2>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-10">
         {posts.map((post) => (
           <BlogPostCard key={`${post.slug}-${post.lang}`} post={post} lang={lang} />
         ))}

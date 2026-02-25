@@ -47,38 +47,21 @@ export function parseMarkdown(fileContent: string): MarkdownData {
  * @param markdown - Markdown content (without frontmatter)
  * @returns HTML string
  */
+
+// Build the processor once and reuse it
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkGfm)
+  .use(remarkMath)
+  .use(remarkRehype)
+  .use(rehypeKatex)
+  .use(rehypeHighlight, {
+    ignoreMissing: true,
+    subset: ['javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'jsx', 'tsx'],
+  })
+  .use(rehypeStringify);
+
 export async function markdownToHtml(markdown: string): Promise<string> {
-  const result = await unified()
-    .use(remarkParse) // Parse markdown to AST
-    .use(remarkGfm) // Support GitHub Flavored Markdown
-    .use(remarkMath) // Parse LaTeX math notation
-    .use(remarkRehype) // Convert markdown AST to HTML AST
-    .use(rehypeKatex) // Render math equations with KaTeX
-    .use(rehypeHighlight, {
-      // Configure syntax highlighting
-      ignoreMissing: true,
-      subset: ['javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'jsx', 'tsx']
-    })
-    .use(rehypeStringify) // Convert HTML AST to string
-    .process(markdown);
-
+  const result = await processor.process(markdown);
   return String(result);
-}
-
-/**
- * Process a complete markdown file (with frontmatter) to HTML
- * @param fileContent - Complete markdown file content
- * @returns Frontmatter data and HTML content
- */
-export async function processMarkdownFile(fileContent: string): Promise<{
-  html: string;
-  data: MarkdownData['data'];
-}> {
-  const { content, data } = parseMarkdown(fileContent);
-  const html = await markdownToHtml(content);
-
-  return {
-    html,
-    data,
-  };
 }
