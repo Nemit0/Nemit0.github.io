@@ -17,10 +17,15 @@ export default async function LangHome({
   const posts = getAllPosts(langTyped);
 
   return (
-    <div className="space-y-12">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-        {t.posts}
-      </h1>
+    <div className="space-y-10">
+      <header>
+        <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">
+          {t.posts}
+        </h1>
+        <p className="mt-2 text-stone-500 dark:text-stone-400 text-base">
+          {langTyped === 'ko' ? '최신 글' : 'Latest posts.'}
+        </p>
+      </header>
       <BlogPostList posts={posts} lang={langTyped} />
     </div>
   );

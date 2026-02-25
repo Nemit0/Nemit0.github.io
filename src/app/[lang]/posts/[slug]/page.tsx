@@ -69,119 +69,96 @@ export default async function PostPage({ params }: PageProps) {
   const alternateLang = getAlternateLanguage(slug, langTyped);
 
   return (
-    <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <article className="max-w-3xl mx-auto py-8 sm:py-12">
       {/* Header */}
-      <header className="mb-8">
+      <header className="mb-10">
         {/* Category */}
         <div className="mb-4">
           <Link
             href={buildCategoryHref(langTyped, post.frontmatter.category)}
-            className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition"
+            className="inline-block text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
           >
             {post.frontmatter.category}
           </Link>
         </div>
 
         {/* Title */}
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-stone-900 dark:text-stone-100 tracking-tight leading-[1.15]">
           {post.frontmatter.title}
         </h1>
 
         {/* Description */}
-        <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
-          {post.frontmatter.description}
-        </p>
+        {post.frontmatter.description && (
+          <p className="text-lg text-stone-500 dark:text-stone-400 mb-6 leading-relaxed">
+            {post.frontmatter.description}
+          </p>
+        )}
 
         {/* Meta information */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500 dark:text-stone-400">
           {/* Date */}
-          <div className="flex items-center gap-2">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
+          <time dateTime={post.frontmatter.date} className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <time dateTime={post.frontmatter.date}>
-              {format(new Date(post.frontmatter.date), 'MMMM d, yyyy')}
-            </time>
-          </div>
+            {format(new Date(post.frontmatter.date), 'MMMM d, yyyy')}
+          </time>
 
           {/* Author */}
           {post.frontmatter.author && (
-            <div className="flex items-center gap-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-              <span>{post.frontmatter.author}</span>
-            </div>
+            <>
+              <span className="text-stone-300 dark:text-stone-700">·</span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                {post.frontmatter.author}
+              </span>
+            </>
           )}
 
           {/* Language switcher for alternate version */}
           {alternateLang && (
-            <div className="ml-auto">
+            <>
+              <span className="text-stone-300 dark:text-stone-700">·</span>
               <Link
                 href={`/${alternateLang}/posts/${slug}`}
-                className="flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                  />
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                 </svg>
-                <span>{languageNames[alternateLang]}</span>
+                {languageNames[alternateLang]}
               </Link>
-            </div>
+            </>
           )}
         </div>
 
         {/* Tags */}
         {post.frontmatter.tags && post.frontmatter.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-1.5 mt-5">
             {post.frontmatter.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded"
+                className="px-2 py-0.5 text-[11px] bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-md"
               >
-                #{tag}
+                {tag}
               </span>
             ))}
           </div>
         )}
       </header>
 
+      {/* Separator */}
+      <hr className="border-stone-200 dark:border-stone-800 mb-10" />
+
       {/* Featured Image */}
       {post.frontmatter.image && (
-        <div className="mb-8">
+        <div className="mb-10">
           <img
             src={post.frontmatter.image}
             alt={post.frontmatter.title}
-            className="w-full rounded-lg"
+            className="w-full rounded-xl border border-stone-200 dark:border-stone-800"
           />
         </div>
       )}
@@ -190,11 +167,11 @@ export default async function PostPage({ params }: PageProps) {
       <MarkdownContent html={post.html} />
 
       {/* Footer */}
-      <footer className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+      <footer className="mt-16 pt-8 border-t border-stone-200 dark:border-stone-800">
         <div className="flex justify-between items-center">
           <Link
             href={`/${lang}`}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+            className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors"
           >
             ← {t.home}
           </Link>
@@ -202,7 +179,7 @@ export default async function PostPage({ params }: PageProps) {
           {alternateLang && (
             <Link
               href={`/${alternateLang}/posts/${slug}`}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             >
               {lang === 'en' ? '한국어로 읽기 →' : 'Read in English →'}
             </Link>
