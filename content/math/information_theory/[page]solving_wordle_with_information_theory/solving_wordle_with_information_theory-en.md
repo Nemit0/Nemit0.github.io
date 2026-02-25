@@ -2,7 +2,7 @@
 title: "Solving Wordle with Information Theory"
 description: "A mathematical approach to the popular word game using Shannon Entropy and Information Maximization."
 date: "2025-12-21"
-category: "information_theory"
+category: "math/information_theory"
 tags: ["math", "information theory", "algorithms", "wordle", "entropy"]
 author: "Nemit"
 ---
