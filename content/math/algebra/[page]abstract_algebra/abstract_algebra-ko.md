@@ -2,7 +2,7 @@
 title: "추상대수학: 군, 환, 체"
 description: "핵심 대수적 구조인 군, 환, 체에 대한 종합 입문 — 정의, 기본 정리, 준동형사상, 표준 예시를 다룹니다."
 date: "2026-02-14"
-category: "math"
+category: "math/algebra"
 tags: ["수학", "추상대수학", "군론", "환론", "체론"]
 author: "Nemit"
 featured: false

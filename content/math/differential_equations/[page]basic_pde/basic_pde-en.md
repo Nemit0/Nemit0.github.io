@@ -2,7 +2,7 @@
 title: "Basic Partial Differential Equations (PDE): A First Guide"
 description: "A beginner-friendly introduction to partial differential equations, including core examples, classifications, and first solution methods."
 date: "2026-02-16"
-category: "math"
+category: "math/differential_equations"
 tags: ["math", "pde", "differential equations", "analysis"]
 author: "Nemit"
 featured: false

@@ -2,7 +2,7 @@
 title: "Field Axioms"
 description: "A comprehensive introduction to field axioms, ordered fields, and the completeness of the real numbers — foundations of real analysis."
 date: "2025-11-26"
-category: "math"
+category: "math/analysis"
 tags: ["math", "analysis", "algebra", "field theory"]
 author: "Nemit"
 featured: false

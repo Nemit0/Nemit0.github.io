@@ -2,7 +2,7 @@
 title: "체 공리"
 description: "체 공리, 순서체, 실수의 완비성에 대한 종합 입문 — 실해석학의 기초"
 date: "2025-11-26"
-category: "math"
+category: "math/analysis"
 tags: ["수학", "해석학", "대수학", "체론"]
 author: "Nemit"
 featured: false

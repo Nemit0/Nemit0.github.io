@@ -2,7 +2,7 @@
 title: "Abstract Algebra: Groups, Rings, and Fields"
 description: "A comprehensive introduction to the core algebraic structures — groups, rings, and fields — covering definitions, fundamental theorems, homomorphisms, and canonical examples."
 date: "2026-02-14"
-category: "math"
+category: "math/algebra"
 tags: ["math", "abstract algebra", "group theory", "ring theory", "field theory"]
 author: "Nemit"
 featured: false
