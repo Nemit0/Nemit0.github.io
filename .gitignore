@@ -11,6 +11,8 @@ next-env.d.ts
 .tmp/
 agent_reports/
 .claude/
+.github/
+.codex
 docs/
 
 # Agent Configuration (local only)

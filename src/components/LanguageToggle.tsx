@@ -41,8 +41,8 @@ export default function LanguageToggle({
           aria-pressed={currentLang === lang}
           aria-label={`Switch to ${lang === 'en' ? 'English' : 'Korean'}`}
           className={`
-            px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-all duration-150
-            focus:outline-none focus:ring-2 focus:ring-blue-500
+            px-3 py-1 rounded-md text-xs font-medium tracking-wide transition-all duration-150 cursor-pointer
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
             ${
               currentLang === lang
                 ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm'

@@ -41,7 +41,11 @@ function CategoryItem({
   return (
     <div>
       <div
-        className="flex items-center gap-1.5 py-1.5 px-2 hover:bg-stone-100 dark:hover:bg-stone-800/60 rounded-lg transition-colors"
+        className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg transition-all duration-200 ${
+          isActive
+            ? 'bg-blue-50 dark:bg-blue-950/40'
+            : 'hover:bg-stone-100 dark:hover:bg-stone-800/60'
+        }`}
         style={{ paddingLeft: `${paddingLeft}rem` }}
       >
         {hasChildren && (
@@ -50,7 +54,7 @@ function CategoryItem({
             type="button"
             aria-expanded={isExpanded}
             aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.name} category`}
-            className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 focus:outline-none rounded transition-colors"
+            className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded transition-colors cursor-pointer"
           >
             <svg className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -62,7 +66,7 @@ function CategoryItem({
         <Link
           href={buildCategoryHref(lang, node.slug)}
           className={`
-            flex-1 text-[13px] leading-snug
+            flex-1 text-[13px] leading-snug cursor-pointer
             ${
               isActive
                 ? 'font-semibold text-blue-600 dark:text-blue-400'
@@ -72,7 +76,7 @@ function CategoryItem({
           `}
         >
           {node.name}
-          <span className="ml-1 text-stone-400 dark:text-stone-600 text-[11px]">({node.count})</span>
+          <span className={`ml-1 text-[11px] ${isActive ? 'text-blue-400 dark:text-blue-500' : 'text-stone-400 dark:text-stone-600'}`}>({node.count})</span>
         </Link>
       </div>
 
