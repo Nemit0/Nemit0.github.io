@@ -19,14 +19,16 @@ export default function AppShell({ lang, categories, children }: AppShellProps) 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-neutral-950 overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-stone-200 dark:border-stone-800 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-stone-200/80 dark:border-stone-800/80 bg-white/85 dark:bg-neutral-950/85 backdrop-blur-xl">
+        {/* Accent gradient line */}
+        <div className="h-[2px] bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600" />
         <div className="w-full px-4 md:px-6 h-14 flex items-center justify-between">
           {/* Left: hamburger + site name */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-lg text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors duration-[var(--transition-fast)] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 cursor-pointer"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
             >
@@ -43,7 +45,7 @@ export default function AppShell({ lang, categories, children }: AppShellProps) 
               href={`/${lang}`}
               className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
-              Nemit's Blog
+              <span className="font-mono text-blue-600 dark:text-blue-400 mr-1">&gt;</span>Nemit&#39;s Blog
             </Link>
           </div>
 
@@ -52,13 +54,13 @@ export default function AppShell({ lang, categories, children }: AppShellProps) 
             <nav className="hidden md:flex items-center gap-1 mr-2">
               <Link
                 href={`/${lang}`}
-                className="px-3 py-1.5 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
               >
                 {lang === 'ko' ? '홈' : 'Home'}
               </Link>
               <Link
                 href={`/${lang}/about`}
-                className="px-3 py-1.5 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors cursor-pointer"
               >
                 {lang === 'ko' ? '소개' : 'About'}
               </Link>

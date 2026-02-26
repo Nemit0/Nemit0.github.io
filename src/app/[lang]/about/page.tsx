@@ -76,7 +76,7 @@ export default async function AboutPage({ params }: PageProps) {
         </div>
       </header>
 
-      <hr className="border-stone-200 dark:border-stone-800 mb-10" />
+      <hr className="h-px bg-gradient-to-r from-stone-200 via-stone-200 to-transparent dark:from-stone-800 dark:via-stone-800 border-0 mb-10" />
 
       {/* Content */}
       <article className="mb-12">
@@ -87,9 +87,10 @@ export default async function AboutPage({ params }: PageProps) {
       <footer className="pt-8 border-t border-stone-200 dark:border-stone-800">
         <Link
           href={`/${lang}`}
-          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors group/back cursor-pointer"
         >
-          ← {t.home}
+          <svg className="w-4 h-4 transition-transform group-hover/back:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          {t.home}
         </Link>
       </footer>
     </div>

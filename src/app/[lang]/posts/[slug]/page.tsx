@@ -76,14 +76,15 @@ export default async function PostPage({ params }: PageProps) {
         <div className="mb-4">
           <Link
             href={buildCategoryHref(langTyped, post.frontmatter.category)}
-            className="inline-block text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
           >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400" />
             {post.frontmatter.category}
           </Link>
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-stone-900 dark:text-stone-100 tracking-tight leading-[1.15]">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-stone-900 dark:text-stone-100 tracking-tight leading-[1.15] text-balance">
           {post.frontmatter.title}
         </h1>
 
@@ -140,7 +141,7 @@ export default async function PostPage({ params }: PageProps) {
             {post.frontmatter.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 text-[11px] bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-md"
+                className="px-2.5 py-0.5 text-[11px] font-medium bg-stone-100 dark:bg-stone-800/80 text-stone-500 dark:text-stone-400 rounded-full"
               >
                 {tag}
               </span>
@@ -150,7 +151,7 @@ export default async function PostPage({ params }: PageProps) {
       </header>
 
       {/* Separator */}
-      <hr className="border-stone-200 dark:border-stone-800 mb-10" />
+      <div className="h-px bg-gradient-to-r from-stone-200 via-stone-200 to-transparent dark:from-stone-800 dark:via-stone-800 mb-10" />
 
       {/* Featured Image */}
       {post.frontmatter.image && (
@@ -171,17 +172,19 @@ export default async function PostPage({ params }: PageProps) {
         <div className="flex justify-between items-center">
           <Link
             href={`/${lang}`}
-            className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200 transition-colors group/back cursor-pointer"
           >
-            ← {t.home}
+            <svg className="w-4 h-4 transition-transform group-hover/back:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            {t.home}
           </Link>
 
           {alternateLang && (
             <Link
               href={`/${alternateLang}/posts/${slug}`}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors group/lang cursor-pointer"
             >
-              {lang === 'en' ? '한국어로 읽기 →' : 'Read in English →'}
+              {lang === 'en' ? '한국어로 읽기' : 'Read in English'}
+              <svg className="w-4 h-4 transition-transform group-hover/lang:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
           )}
         </div>

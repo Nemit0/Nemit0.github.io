@@ -31,12 +31,12 @@ export default function BlogPostList({
   return (
     <section>
       {title && (
-        <h2 className="text-2xl font-semibold mb-8 text-stone-900 dark:text-stone-100 tracking-tight">
+        <h2 className="text-2xl font-bold mb-8 text-stone-900 dark:text-stone-100 tracking-tight">
           {title}
         </h2>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {posts.map((post) => (
           <BlogPostCard key={`${post.slug}-${post.lang}`} post={post} lang={lang} />
         ))}
