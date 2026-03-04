@@ -23,6 +23,37 @@ export interface MarkdownData {
   };
 }
 
+interface HastNode {
+  type?: string;
+  tagName?: string;
+  properties?: Record<string, unknown>;
+  children?: HastNode[];
+}
+
+function wrapTables(node: HastNode): void {
+  if (!node.children) {
+    return;
+  }
+
+  for (let index = 0; index < node.children.length; index += 1) {
+    const child = node.children[index];
+
+    if (child.type === 'element' && child.tagName === 'table') {
+      node.children[index] = {
+        type: 'element',
+        tagName: 'div',
+        properties: {
+          className: ['markdown-table'],
+        },
+        children: [child],
+      };
+      continue;
+    }
+
+    wrapTables(child);
+  }
+}
+
 /**
  * Parse markdown file content and extract frontmatter
  * @param fileContent - Raw markdown file content with frontmatter
@@ -54,6 +85,9 @@ const processor = unified()
   .use(remarkGfm)
   .use(remarkMath)
   .use(remarkRehype)
+  .use(() => (tree) => {
+    wrapTables(tree as HastNode);
+  })
   .use(rehypeKatex)
   .use(rehypeHighlight, {
     ignoreMissing: true,

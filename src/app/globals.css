@@ -126,10 +126,15 @@ body {
   color: var(--color-text);
   line-height: 1.8;
   font-size: 1.0625rem;
+  min-width: 0;
 }
 
 .markdown-content > :first-child {
   margin-top: 0;
+}
+
+.markdown-content :where(p, li, blockquote, h1, h2, h3, h4, th, td) {
+  overflow-wrap: break-word;
 }
 
 /* Headings */
@@ -237,14 +242,23 @@ body {
 }
 
 /* Tables */
+.markdown-content .markdown-table {
+  width: 100%;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+}
+
 .markdown-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.5rem 0;
+  margin: 0;
   font-size: 0.9375rem;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
+  min-width: 100%;
 }
 
 .markdown-content th,
@@ -252,6 +266,7 @@ body {
   border: 1px solid var(--color-border);
   padding: 0.75rem 1rem;
   text-align: left;
+  white-space: normal;
 }
 
 .markdown-content th {
@@ -275,6 +290,7 @@ body {
 .markdown-content pre {
   margin-bottom: 1.5rem;
   overflow-x: auto;
+  max-width: 100%;
 }
 
 .markdown-content code:not(pre code) {
@@ -285,6 +301,7 @@ body {
   border: 1px solid var(--color-border);
   color: var(--color-text);
   font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
+  overflow-wrap: anywhere;
 }
 
 /* Images */
@@ -308,4 +325,32 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.5rem 0;
+}
+
+@media (max-width: 640px) {
+  .markdown-content {
+    font-size: 1rem;
+  }
+
+  .markdown-content h1 {
+    font-size: 1.75rem;
+  }
+
+  .markdown-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .markdown-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .markdown-content .markdown-table {
+    margin: 1.25rem 0;
+  }
+
+  .markdown-content th,
+  .markdown-content td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+  }
 }

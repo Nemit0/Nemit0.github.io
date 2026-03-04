@@ -71,7 +71,7 @@ export default function AppShell({ lang, categories, children }: AppShellProps) 
       </header>
 
       {/* Body */}
-      <div className="w-full flex flex-col md:flex-row md:items-stretch items-start min-h-[calc(100vh-3.5rem)]">
+      <div className="w-full flex flex-col items-stretch md:flex-row md:items-stretch min-h-[calc(100vh-3.5rem)]">
         <CategorySidebar
           lang={lang}
           categories={categories}
