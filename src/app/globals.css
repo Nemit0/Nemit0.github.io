@@ -53,6 +53,7 @@
 
   .hljs {
     background: #1c1917 !important;
+    color: var(--color-text) !important;
   }
 }
 
