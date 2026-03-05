@@ -612,3 +612,71 @@ def merge_k_sorted(lists):
 | Deque | O(1) both ends | O(1) both ends | O(1) both ends | Sliding window |
 | Priority Queue | O(log n) | O(log n) | O(1) min/max | Dijkstra, scheduling |
 | Monotonic Stack | O(1) amortized | O(1) amortized | O(1) top | Next greater/smaller |
+
+---
+
+## Worked Example: Balanced Parentheses — Step-by-Step Trace
+
+We trace through two input strings to show exactly how the stack-based algorithm works.
+
+**Matching pairs**: `(` ↔ `)`, `{` ↔ `}`, `[` ↔ `]`
+
+**Algorithm**: Push every opening bracket. On a closing bracket, pop the top — if it matches, continue; if it doesn't (or the stack is empty), the string is **invalid**. After processing all characters, the string is valid only if the stack is **empty**.
+
+### Valid string: `"({[]})"`
+
+| Step | Character | Action | Stack State | Notes |
+|------|-----------|--------|-------------|-------|
+| 1 | `(` | Push | `(` | Opening bracket → push |
+| 2 | `{` | Push | `( {` | Opening bracket → push |
+| 3 | `[` | Push | `( { [` | Opening bracket → push |
+| 4 | `]` | Pop `[` | `( {` | Closing bracket; top is `[` → match ✓ |
+| 5 | `}` | Pop `{` | `(` | Closing bracket; top is `{` → match ✓ |
+| 6 | `)` | Pop `(` | *(empty)* | Closing bracket; top is `(` → match ✓ |
+
+Stack is empty after all characters → **VALID** ✅
+
+### Invalid string: `"({[}])"`
+
+| Step | Character | Action | Stack State | Notes |
+|------|-----------|--------|-------------|-------|
+| 1 | `(` | Push | `(` | Opening bracket → push |
+| 2 | `{` | Push | `( {` | Opening bracket → push |
+| 3 | `[` | Push | `( { [` | Opening bracket → push |
+| 4 | `}` | Pop `[` | — | Closing bracket; top is `[`, expected `]` → **MISMATCH** ✗ |
+
+**Failure at step 4**: The character `}` expects to close a `{`, but the top of the stack is `[`. The innermost open bracket `[` was never closed before attempting to close `{`. → **INVALID** ❌
+
+---
+
+## Worked Example: Monotonic Stack — Next Greater Element
+
+**Problem**: Given `arr = [2, 1, 5, 6, 2, 3]`, find for each element the next element to its right that is strictly greater. If none exists, the answer is `-1`.
+
+**Algorithm**: Maintain a stack of **indices** whose elements have not yet found their next greater element. The stack stays **monotonically decreasing** in value. When a new element `arr[i]` is larger than `arr[stack.top()]`, pop and record the answer.
+
+**Initial state**: `result = [-1, -1, -1, -1, -1, -1]`, stack = `[]`
+
+| Step | Element `arr[i]` | Stack Before (indices) | Action | Stack After (indices) | Result Array Update |
+|------|-----------------|------------------------|--------|-----------------------|---------------------|
+| i=0 | `2` | `[]` | Push 0 (no larger element seen yet) | `[0]` | no change |
+| i=1 | `1` | `[0]` | `arr[0]=2 > 1` → no pop; Push 1 | `[0, 1]` | no change |
+| i=2 | `5` | `[0, 1]` | `arr[1]=1 < 5` → pop 1: **result[1]=5**; `arr[0]=2 < 5` → pop 0: **result[0]=5**; Push 2 | `[2]` | `result = [5, 5, -1, -1, -1, -1]` |
+| i=3 | `6` | `[2]` | `arr[2]=5 < 6` → pop 2: **result[2]=6**; Push 3 | `[3]` | `result = [5, 5, 6, -1, -1, -1]` |
+| i=4 | `2` | `[3]` | `arr[3]=6 > 2` → no pop; Push 4 | `[3, 4]` | no change |
+| i=5 | `3` | `[3, 4]` | `arr[4]=2 < 3` → pop 4: **result[4]=3**; `arr[3]=6 > 3` → no pop; Push 5 | `[3, 5]` | `result = [5, 5, 6, -1, 3, -1]` |
+| end | — | `[3, 5]` | Remaining indices 3, 5 have no next greater → result stays `-1` | `[]` | `result = [5, 5, 6, -1, 3, -1]` |
+
+**Final result**: `[5, 5, 6, -1, 3, -1]`
+
+Meaning:
+- `arr[0]=2` → next greater is `5` (at index 2)
+- `arr[1]=1` → next greater is `5` (at index 2)
+- `arr[2]=5` → next greater is `6` (at index 3)
+- `arr[3]=6` → no next greater → `-1`
+- `arr[4]=2` → next greater is `3` (at index 5)
+- `arr[5]=3` → no next greater → `-1`
+
+### Why this is O(n)
+
+Each element (index) is **pushed onto the stack exactly once** and **popped from the stack at most once**. The total number of push + pop operations across the entire algorithm is therefore bounded by `2n`. Even though there is a nested `while` loop, its total iterations over the entire run cannot exceed `n`. This gives **O(n)** time overall, not O(n²).
