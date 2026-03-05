@@ -407,7 +407,7 @@ A's kernel stack (from top):
   RFLAGS = 0x00000246  ← carry=0, zero=1, interrupt-enable=1
   RSP    = 0x7ffe9120  ← A's user-space stack pointer
   SS     = 0x002b      ← user-mode stack segment
-  RAX    = 0x2329      ← current Fibonacci value (fib(15) = 610 = 0x262... partial)
+  RAX    = 0x00000262  ← current Fibonacci value (fib(15) = 610 = 0x262... partial)
   RBX    = 0x0000000f  ← loop counter (n=15)
   RCX    = 0x00000001
   RDX    = 0x00000000
