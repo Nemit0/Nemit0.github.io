@@ -668,7 +668,7 @@ Kernel pipe buffer:
 └──────────────────────────────────┘
 ```
 
-`write()` copies the string into the kernel buffer and returns. The write is non-blocking as long as the buffer is not full.
+`write()` copies the string into the kernel buffer and returns. On a normal (blocking) pipe FD, `write()` may block if the pipe cannot accept more data; with `O_NONBLOCK` set, it instead fails with `EAGAIN`/`EWOULDBLOCK`. In this simple example the write is small enough that it typically returns immediately.
 
 **Step 5 — Child reads message:**
 
