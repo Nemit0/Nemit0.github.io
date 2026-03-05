@@ -201,11 +201,10 @@ export default function CategorySidebar({
           hidden md:block flex-shrink-0
           sticky top-[3.5rem] h-[calc(100vh-3.5rem)]
           overflow-hidden
-          border-r
           transition-[width,border-color] duration-300 ease-in-out
           ${isDesktopOpen
-            ? 'w-56 lg:w-60 border-stone-200 dark:border-stone-800'
-            : 'w-0 border-transparent'}
+            ? 'w-56 lg:w-60 border-r border-stone-200 dark:border-stone-800'
+            : 'w-0 border-r-0 border-transparent'}
           ${className}
         `}
       >
