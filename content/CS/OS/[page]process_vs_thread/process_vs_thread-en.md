@@ -1,7 +1,7 @@
 ---
 title: "Process vs Thread"
 description: "A deep dive into processes and threads — how they differ, how they're managed, and why it matters for operating system design."
-date: "2026-03-04"
+date: "2026-03-05"
 category: "CS/OS"
 tags: ["OS", "process", "thread", "concurrency", "PCB", "multithreading"]
 author: "Nemit"
@@ -508,3 +508,280 @@ cat /proc/1234/status
 - The OS schedules **threads**, not processes. Processes are resource containers.
 - Use threads for performance within a single task. Use processes for isolation between tasks.
 - The cost of flexibility in threads (shared memory) is the burden of synchronization correctness.
+
+---
+
+## Worked Example: Memory Layout — Two Processes vs Two Threads
+
+### Two Separate Processes
+
+When you run two separate programs (or two instances of the same program), each gets its own isolated virtual address space. The OS assigns each process a distinct **CR3 register value** — the pointer to its top-level page table. Because the page tables differ, the same virtual address in Process A and Process B maps to completely different physical pages.
+
+```
+Physical RAM:
+┌─────────────────┐
+│   Process A     │
+│  ┌───────────┐  │
+│  │  Stack A  │  │
+│  │  Heap A   │  │
+│  │  Data A   │  │
+│  │  Code A   │  │
+│  └───────────┘  │
+│                 │
+│   Process B     │
+│  ┌───────────┐  │
+│  │  Stack B  │  │
+│  │  Heap B   │  │
+│  │  Data B   │  │
+│  │  Code B   │  │
+│  └───────────┘  │
+└─────────────────┘
+```
+
+Key points:
+- **Separate virtual address spaces** — `0x7fff0000` in Process A is not the same memory as `0x7fff0000` in Process B.
+- **Different CR3 values** — a context switch between processes flushes the TLB and loads the new page table root.
+- **No direct memory sharing** — Process A cannot read or write Process B's variables without an explicit OS-mediated IPC mechanism.
+
+### Two Threads in the Same Process
+
+Threads share the parent process's address space. The code, global data, and heap are all at the same physical addresses seen by both threads. Only the **stack** and **CPU register state** are private to each thread.
+
+```
+Process (shared address space):
+┌─────────────────────────────┐
+│  Shared: Code, Data, Heap   │
+│  ┌────────┐  ┌────────┐     │
+│  │Stack T1│  │Stack T2│     │
+│  └────────┘  └────────┘     │
+└─────────────────────────────┘
+```
+
+| Region | Process A & B | Thread 1 & Thread 2 |
+|---|---|---|
+| Code segment | Separate copies | Shared |
+| Global/static data | Separate copies | Shared |
+| Heap | Separate | Shared |
+| Stack | Separate | **Separate per thread** |
+| CPU registers (PC, SP, …) | Separate (saved in PCB) | **Separate per thread** (saved in TCB) |
+
+### Concrete Example: Shared vs Isolated Variables
+
+```c
+// --- Process isolation ---
+// Process A:
+int counter = 0;
+counter++;   // counter is now 1 in Process A's memory
+// Process B's 'counter' is still 0 — they live at different physical addresses.
+
+// --- Thread sharing ---
+// Both Thread 1 and Thread 2 are in the same process:
+int shared_counter = 0;   // lives in .data / heap, visible to both
+
+// Thread 1:
+shared_counter++;   // shared_counter = 1
+
+// Thread 2 sees the change immediately:
+printf("%d\n", shared_counter);   // prints 1 (without proper sync, may race)
+```
+
+If Process A increments a variable, Process B's copy is **unchanged** — isolation is total. If Thread 1 increments a shared variable, Thread 2 **sees the change immediately**, which is powerful but requires synchronization to avoid race conditions.
+
+---
+
+## Worked Example: IPC via Pipe (C Example)
+
+### The pipe() + fork() Pattern
+
+A **pipe** is a kernel-managed byte buffer with two file descriptors: a read end and a write end. When combined with `fork()`, it becomes the simplest form of IPC between a parent and child process.
+
+```c
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+
+int main() {
+    int pipefd[2];
+    pipe(pipefd);  // pipefd[0]=read end, pipefd[1]=write end
+
+    pid_t pid = fork();
+
+    if (pid == 0) {  // Child process
+        close(pipefd[1]);  // close write end
+        char buf[100];
+        read(pipefd[0], buf, sizeof(buf));
+        printf("Child received: %s\n", buf);
+        close(pipefd[0]);
+    } else {  // Parent process
+        close(pipefd[0]);  // close read end
+        const char* msg = "Hello from parent";
+        write(pipefd[1], msg, strlen(msg) + 1);
+        close(pipefd[1]);
+        wait(NULL);  // wait for child
+    }
+    return 0;
+}
+```
+
+### Step-by-Step Execution
+
+**Step 1 — `pipe()` creates two file descriptors:**
+
+```
+Kernel pipe buffer:
+┌──────────────────────────────────┐
+│  [empty]                         │
+└──────────────────────────────────┘
+   ↑ pipefd[0] (read end)
+                    ↑ pipefd[1] (write end)
+```
+
+Both `pipefd[0]` and `pipefd[1]` point into the same in-kernel circular buffer (typically 64 KB on Linux).
+
+**Step 2 — `fork()` creates child with a copy of the parent's memory:**
+
+After `fork()`, the child inherits *copies* of the file descriptor table, so both parent and child hold references to both ends of the pipe. At this point there are **four** open file descriptors pointing at the pipe (two in the parent, two in the child).
+
+```
+Parent:  pipefd[0] (read)  pipefd[1] (write)
+Child:   pipefd[0] (read)  pipefd[1] (write)
+```
+
+**Step 3 — Each side closes the end it won't use (why?):**
+
+This is critical. If the parent keeps the read end open, and the child keeps the write end open, the kernel will never signal EOF to the reader — because there is always at least one open write end. Closing the unused ends ensures:
+- The child closing `pipefd[1]` means the parent's `read()` will eventually get EOF.
+- The parent closing `pipefd[0]` means the child's `write()` will get `SIGPIPE` if the reader is gone.
+
+```
+Parent:  [closed]          pipefd[1] (write)  ← only writes
+Child:   pipefd[0] (read)  [closed]           ← only reads
+```
+
+**Step 4 — Parent writes message:**
+
+```
+Kernel pipe buffer:
+┌──────────────────────────────────┐
+│  "Hello from parent\0"           │
+└──────────────────────────────────┘
+```
+
+`write()` copies the string into the kernel buffer and returns. The write is non-blocking as long as the buffer is not full.
+
+**Step 5 — Child reads message:**
+
+`read()` copies bytes from the kernel buffer into `buf`. If the buffer is empty and the write end is still open, `read()` blocks until data arrives.
+
+**Step 6 — Pipe buffer in memory:**
+
+```
+┌─────────────────────────────────────────────────┐
+│ Kernel space                                    │
+│  ┌──────────────────────────────────┐           │
+│  │  pipe buffer (circ. 64KB)        │           │
+│  │  "Hello from parent\0"           │           │
+│  └──────────────────────────────────┘           │
+│        ↑ write (parent)   ↓ read (child)        │
+└─────────────────────────────────────────────────┘
+```
+
+Data crosses the user-kernel boundary twice: once on `write()` (parent → kernel) and once on `read()` (kernel → child). This is why shared memory (which avoids the kernel buffer entirely) is faster for high-throughput IPC.
+
+### Python Equivalent
+
+Using `os.pipe()` (low-level, mirrors the C example):
+
+```python
+import os
+
+r_fd, w_fd = os.pipe()   # same as pipe(pipefd) in C
+pid = os.fork()
+
+if pid == 0:             # Child
+    os.close(w_fd)
+    data = os.read(r_fd, 100)
+    print(f"Child received: {data.decode()}")
+    os.close(r_fd)
+else:                    # Parent
+    os.close(r_fd)
+    os.write(w_fd, b"Hello from parent")
+    os.close(w_fd)
+    os.waitpid(pid, 0)
+```
+
+Using `multiprocessing.Pipe()` (higher-level, object-oriented):
+
+```python
+from multiprocessing import Process, Pipe
+
+def child_fn(conn):
+    msg = conn.recv()          # blocks until data arrives
+    print(f"Child received: {msg}")
+    conn.close()
+
+parent_conn, child_conn = Pipe()   # creates a pair of connected Connection objects
+
+p = Process(target=child_fn, args=(child_conn,))
+p.start()
+
+parent_conn.send("Hello from parent")  # serialize and send
+parent_conn.close()
+p.join()
+```
+
+`multiprocessing.Pipe()` wraps `os.pipe()` and adds object serialization (via `pickle`), making it easy to send arbitrary Python objects between processes.
+
+---
+
+## Practical Guide: When to Use Processes vs Threads
+
+### Scenario: Building a Web Server
+
+You're building a web server. Each incoming HTTP request must be handled concurrently. Which concurrency model should you choose?
+
+**Scenario A — Thread-per-request (e.g., Apache `worker` MPM):**
+
+The server maintains a pool of threads. Each thread handles one request at a time and can share a connection pool or in-memory cache with other threads.
+
+- ✅ **Shared state is easy** — threads read the same cache object without IPC.
+- ✅ **Low memory overhead** — threads are lightweight; a pool of 200 threads is trivial.
+- ❌ **One crash can kill all requests** — a segfault in one thread brings down the entire process, dropping all in-flight requests.
+- ❌ **Race conditions** — concurrent access to shared state requires careful locking.
+
+**Scenario B — Process-per-request / pre-fork (e.g., Apache `prefork` MPM, Nginx worker processes):**
+
+The server forks a fixed number of worker processes at startup. Each worker handles requests independently.
+
+- ✅ **Fault isolation** — if a worker crashes, the master process detects it and respawns. Other workers are unaffected.
+- ✅ **Security** — workers can drop privileges independently; a compromised worker has limited blast radius.
+- ❌ **Higher memory usage** — each process has its own heap. Sharing a large cache requires explicit shared memory.
+- ❌ **Slower context switch** — switching between processes flushes the TLB; switching between threads in the same process does not.
+
+**Scenario C — Async / event loop (e.g., Node.js, Python `asyncio`, Nginx event MPM):**
+
+A single thread (or small fixed pool) handles all requests using non-blocking I/O and an event loop. When a request is waiting for a database query, the thread moves on to serve another request.
+
+- ✅ **Best for I/O-bound tasks** — thousands of simultaneous connections with minimal memory.
+- ✅ **No synchronization needed** — single-threaded, no shared state races.
+- ❌ **Bad for CPU-bound work** — a long computation blocks the event loop, stalling all other requests.
+- ❌ **Callback/async complexity** — control flow is harder to reason about.
+
+### Comparison Table
+
+| Scenario | Processes | Threads | Async |
+|---|---|---|---|
+| **Memory isolation** | ✅ Complete | ❌ Shared | ❌ Shared |
+| **Crash safety** | ✅ One crash isolated | ❌ Crash kills all | ✅ Single thread, no partial crash |
+| **Memory usage** | ❌ High (separate heap per process) | ✅ Low (shared heap) | ✅ Very low |
+| **Context switch cost** | ❌ High (TLB flush, page table swap) | ✅ Low (same address space) | ✅ Minimal (cooperative yield) |
+| **Shared state** | ❌ Requires IPC (slow) | ✅ Direct (needs sync) | ✅ Trivial (single thread) |
+| **Use case** | Fault-tolerant services, browser tabs, microservices | High-throughput compute, parallel algorithms | High-concurrency I/O servers |
+
+### Rule of Thumb
+
+- **CPU-bound parallel work** (image processing, video encoding, ML inference) → **threads** (or processes if isolation matters)
+- **Many simultaneous I/O-bound connections** (API gateway, chat server, proxy) → **async / event loop**
+- **Strong fault isolation required** (browser tabs, plugin sandboxes, multi-tenant services) → **processes**
+- **Shared in-memory state + moderate concurrency** (database connection pool, cache) → **threads with mutexes**
