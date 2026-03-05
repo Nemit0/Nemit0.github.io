@@ -229,6 +229,7 @@ export default function CategorySidebar({
           shadow-sm hover:shadow-md
           transition-all duration-300 ease-in-out
           cursor-pointer
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
           ${isDesktopOpen ? 'left-56 lg:left-60' : 'left-0'}
         `}
         aria-label={isDesktopOpen ? 'Collapse sidebar' : 'Expand sidebar'}
