@@ -449,3 +449,230 @@ def topological_sort_bfs(graph, n):
         return None    # Cycle detected
     return order
 ```
+
+---
+
+## Worked Example: BFS and DFS Trace on a Sample Graph
+
+### Graph Setup
+
+```
+A -- B -- D
+|    |
+C -- E -- F
+```
+
+**Adjacency list:**
+- A: [B, C]
+- B: [A, D, E]
+- C: [A, E]
+- D: [B]
+- E: [B, C, F]
+- F: [E]
+
+```python
+graph = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D', 'E'],
+    'C': ['A', 'E'],
+    'D': ['B'],
+    'E': ['B', 'C', 'F'],
+    'F': ['E'],
+}
+```
+
+---
+
+### BFS Trace from A
+
+BFS uses a **queue** (FIFO). When visiting a node, its unvisited neighbors are enqueued immediately.
+
+```
+Initial state — Queue: [A],  Visited: {}
+```
+
+| Step | Visit | Queue after dequeue + enqueue | Visited set |
+|------|-------|-------------------------------|-------------|
+| 1 | **A** | [B, C] | {A, B, C} |
+| 2 | **B** | [C, D, E] | {A, B, C, D, E} |
+| 3 | **C** | [D, E] | {A, B, C, D, E} |
+| 4 | **D** | [E] | {A, B, C, D, E} |
+| 5 | **E** | [F] | {A, B, C, D, E, F} |
+| 6 | **F** | [] | {A, B, C, D, E, F} |
+
+**Step-by-step notes:**
+- Step 1: visit A, enqueue neighbors B and C (both unvisited)
+- Step 2: visit B, A already visited — enqueue D, E
+- Step 3: visit C, A already visited, E already in visited — nothing new enqueued
+- Step 4: visit D, B already visited — nothing new
+- Step 5: visit E, B and C already visited — enqueue F
+- Step 6: visit F, E already visited — queue empty, done
+
+**BFS traversal order: A → B → C → D → E → F**
+
+BFS explores in *layers*: first all nodes at distance 1 from A (B, C), then distance 2 (D, E), then distance 3 (F).
+
+---
+
+### DFS Trace from A
+
+DFS uses a **stack** (LIFO). The iterative version pushes neighbors in *reversed* order so the first neighbor is processed first.
+
+```
+Initial state — Stack: [A],  Visited: {}
+```
+
+| Step | Pop | Action | Stack after push | Visited set |
+|------|-----|--------|-----------------|-------------|
+| 1 | **A** | push reversed([B,C]) → push C, B | [C, B] | {A} |
+| 2 | **B** | push reversed([A,D,E]) → A visited, push E, D | [C, E, D] | {A, B} |
+| 3 | **D** | push reversed([B]) → B visited, nothing | [C, E] | {A, B, D} |
+| 4 | **E** | push reversed([B,C,F]) → B visited, push F, C | [C, F, C] | {A, B, D, E} |
+| 5 | **C** | push reversed([A,E]) → both visited, nothing | [C, F] | {A, B, C, D, E} |
+| 6 | **F** | push reversed([E]) → E visited, nothing | [C] | {A, B, C, D, E, F} |
+| 7 | ~~C~~ | already visited, skip | [] | {A, B, C, D, E, F} |
+
+**DFS traversal order: A → B → D → E → C → F**
+
+DFS goes as *deep* as possible first: A → B → D (dead end, backtrack) → E → C (dead end) → F.
+
+---
+
+### Comparing the Two Traversals
+
+| | BFS | DFS |
+|---|---|---|
+| Traversal order | A, B, C, D, E, F | A, B, D, E, C, F |
+| Strategy | Layer by layer (distance) | Branch as deep as possible |
+| When D is visited | Step 4 (after C) | Step 3 (right after B) |
+| When C is visited | Step 3 (early — same distance as B) | Step 5 (late — after the entire B-D-E-F branch) |
+
+BFS reaches C early because it is only 1 hop from A. DFS delays C because it dives into B's sub-branch first (B → D → E → F), only returning to C via backtracking.
+
+---
+
+## Worked Example: Binary Search on Answer
+
+### Problem
+
+> You need to ship packages with weights `[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]` within **D = 5 days**. Each day you load consecutive packages (in order) up to the ship's capacity. Find the **minimum ship capacity** that allows all packages to ship on time.
+
+### Key Insight
+
+If a capacity of `mid` works, then `mid + 1` also works — the answer is **monotonic**. This means we can binary search over the answer space.
+
+- **Low = 10** (must carry at least the heaviest package)
+- **High = 55** (carry everything in 1 day = sum of all weights)
+
+```python
+def can_ship(weights, D, capacity):
+    days_needed, current_load = 1, 0
+    for w in weights:
+        if current_load + w > capacity:
+            days_needed += 1
+            current_load = 0
+        current_load += w
+    return days_needed <= D
+
+def min_capacity(weights, D):
+    low, high = max(weights), sum(weights)
+    while low < high:
+        mid = low + (high - low) // 2
+        if can_ship(weights, D, mid):
+            high = mid
+        else:
+            low = mid + 1
+    return low
+```
+
+---
+
+### Binary Search Trace
+
+**Initial:** low = 10, high = 55
+
+#### Iteration 1 — mid = 32
+
+`can_ship([1..10], 5, capacity=32)`:
+```
+Day 1: 1+2+3+4+5+6+7 = 28  (adding 8 → 36 > 32, stop)
+Day 2: 8+9+10 = 27
+→ 2 days needed ≤ 5  ✓  True
+```
+→ `high = 32`
+
+#### Iteration 2 — mid = 21
+
+`can_ship([1..10], 5, capacity=21)`:
+```
+Day 1: 1+2+3+4+5+6 = 21  (adding 7 → 28 > 21, stop)
+Day 2: 7+8 = 15           (adding 9 → 24 > 21, stop)
+Day 3: 9+10 = 19
+→ 3 days needed ≤ 5  ✓  True
+```
+→ `high = 21`
+
+#### Iteration 3 — mid = 15
+
+`can_ship([1..10], 5, capacity=15)`:
+```
+Day 1: 1+2+3+4+5 = 15  (adding 6 → 21 > 15, stop)
+Day 2: 6+7 = 13        (adding 8 → 21 > 15, stop)
+Day 3: 8               (adding 9 → 17 > 15, stop)
+Day 4: 9               (adding 10 → 19 > 15, stop)
+Day 5: 10
+→ 5 days needed ≤ 5  ✓  True
+```
+→ `high = 15`
+
+#### Iteration 4 — mid = 12
+
+`can_ship([1..10], 5, capacity=12)`:
+```
+Day 1: 1+2+3+4 = 10  (adding 5 → 15 > 12, stop)
+Day 2: 5+6 = 11      (adding 7 → 18 > 12, stop)
+Day 3: 7             (adding 8 → 15 > 12, stop)
+Day 4: 8             (adding 9 → 17 > 12, stop)
+Day 5: 9             (adding 10 → 19 > 12, stop)
+Day 6: 10
+→ 6 days needed > 5  ✗  False
+```
+→ `low = 13`
+
+#### Iteration 5 — mid = 14
+
+`can_ship([1..10], 5, capacity=14)`:
+```
+Day 1: 1+2+3+4 = 10  (adding 5 → 15 > 14, stop)
+Day 2: 5+6 = 11      (adding 7 → 18 > 14, stop)
+Day 3: 7             (adding 8 → 15 > 14, stop)
+Day 4: 8             (adding 9 → 17 > 14, stop)
+Day 5: 9             (adding 10 → 19 > 14, stop)
+Day 6: 10
+→ 6 days needed > 5  ✗  False
+```
+→ `low = 15`
+
+#### Termination — low = 15, high = 15
+
+`low == high` → loop ends.
+
+---
+
+### Summary Table
+
+| Iter | low | high | mid | can_ship(mid)? | Action |
+|------|-----|------|-----|----------------|--------|
+| 1 | 10 | 55 | 32 | True (2 days) | high = 32 |
+| 2 | 10 | 32 | 21 | True (3 days) | high = 21 |
+| 3 | 10 | 21 | 15 | True (5 days) | high = 15 |
+| 4 | 10 | 15 | 12 | False (6 days) | low = 13 |
+| 5 | 13 | 15 | 14 | False (6 days) | low = 15 |
+| — | 15 | 15 | — | converged | **answer = 15** |
+
+### Answer: **15**
+
+With capacity 15 the packages ship in exactly 5 days:
+`[1,2,3,4,5]` · `[6,7]` · `[8]` · `[9]` · `[10]`
+
+Capacity 14 requires 6 days, so 15 is the minimum.
