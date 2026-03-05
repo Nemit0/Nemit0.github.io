@@ -672,7 +672,7 @@ When switching between Thread T1 and Thread T2 **within the same process**:
 | Metric | Thread switch | Process switch |
 |---|---|---|
 | CR3 write + TLB flush | None | ~200–500 cycles |
-| TLB warm-up (first N accesses) | None (TLB still valid) | ~100–200 ns per miss × N misses |
+| TLB warm-up (first N accesses) | None (TLB still valid) | ~100–200 cycles per miss × N misses |
 | L1/L2 cache warm-up | Partial (shared data may persist) | Fully cold |
 | Total typical latency | **~1–5 μs** | **~5–30 μs** |
 | Ratio | 1× (baseline) | 5–30× slower |
