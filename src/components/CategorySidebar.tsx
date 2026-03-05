@@ -108,11 +108,11 @@ export default function CategorySidebar({
   onMobileOpenChange,
   showInternalMobileTrigger = true,
 }: CategorySidebarProps) {
-  // Default: expand all root-level categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(categories.map(c => c.slug))
   );
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  const [isDesktopOpen, setIsDesktopOpen] = useState(true);
 
   const isMobileOpen = mobileOpen ?? internalMobileOpen;
   const setIsMobileOpen = (open: boolean) => {
@@ -195,29 +195,70 @@ export default function CategorySidebar({
         </button>
       )}
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — sticky, with its own scrollbar, collapsible */}
       <aside
         className={`
-          hidden md:block w-56 lg:w-60 border-r border-stone-200 dark:border-stone-800
-          self-stretch
+          hidden md:block flex-shrink-0
+          sticky top-[3.5rem] h-[calc(100vh-3.5rem)]
+          overflow-hidden
+          transition-[width,border-color] duration-300 ease-in-out
+          ${isDesktopOpen
+            ? 'w-56 lg:w-60 border-r border-stone-200 dark:border-stone-800'
+            : 'w-0 border-r-0 border-transparent'}
           ${className}
         `}
       >
-        <div className="sticky top-[3.5rem] max-h-[calc(100vh-3.5rem)] overflow-y-auto p-3">
+        {/* Fixed-width inner panel so content doesn't squish during the width transition */}
+        <div
+          className={`h-full overflow-y-auto p-3 w-56 lg:w-60 ${isDesktopOpen ? '' : 'pointer-events-none'}`}
+          hidden={!isDesktopOpen}
+          aria-hidden={!isDesktopOpen}
+        >
           {sidebarContent}
         </div>
       </aside>
 
+      {/* Desktop/tablet toggle button — fixed to viewport, sits at the right edge of the sidebar */}
+      <button
+        type="button"
+        onClick={() => setIsDesktopOpen(prev => !prev)}
+        className={`
+          fixed top-1/2 -translate-y-1/2 z-30
+          hidden md:flex items-center justify-center
+          w-4 h-10
+          bg-white dark:bg-neutral-900
+          border-y border-r border-stone-200 dark:border-stone-800
+          rounded-r-lg
+          text-stone-400 hover:text-stone-600 dark:hover:text-stone-300
+          shadow-sm hover:shadow-md
+          transition-all duration-300 ease-in-out
+          cursor-pointer
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent
+          ${isDesktopOpen ? 'left-56 lg:left-60' : 'left-0'}
+        `}
+        aria-label={isDesktopOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        aria-expanded={isDesktopOpen}
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d={isDesktopOpen ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
+          />
+        </svg>
+      </button>
+
       {/* Mobile overlay */}
       {isMobileOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden transition-opacity duration-200"
-            onClick={() => setIsMobileOpen(false)}
-            aria-hidden="true"
-          />
-        </>
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden transition-opacity duration-200"
+          onClick={() => setIsMobileOpen(false)}
+          aria-hidden="true"
+        />
       )}
+
+      {/* Mobile panel */}
       <aside
         className={mobilePanelClasses}
         role="dialog"
