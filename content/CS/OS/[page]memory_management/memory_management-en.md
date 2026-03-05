@@ -1,7 +1,7 @@
 ---
 title: "Memory Management: Paging, Segmentation, and Virtual Memory"
 description: "How operating systems manage physical memory through paging, segmentation, and virtual memory — including address translation, TLBs, page faults, and replacement algorithms."
-date: "2026-03-04"
+date: "2026-03-05"
 category: "CS/OS"
 tags: ["OS", "memory management", "paging", "segmentation", "virtual memory", "TLB", "page fault"]
 author: "Nemit"
@@ -564,3 +564,265 @@ The kernel maintains **active/inactive lists** for both types. Pages start on th
 ### SSD Considerations
 
 Traditional swap on HDDs is painfully slow (seek time ~10ms). SSDs make swap much more viable (~0.1ms access). However, excessive swapping to SSD shortens its lifespan due to write amplification. **zswap** compresses pages in RAM before writing to swap — often 2–3× compression ratio reduces actual swap I/O.
+
+---
+
+## Worked Example: Page Table Walk — Virtual to Physical Address Translation
+
+### Setup
+
+- 32-bit virtual address space
+- Page size: 4 KB (12-bit offset)
+- Virtual address to translate: **0x12345678**
+
+### Step 1 — Binary Representation
+
+```
+0x12345678 = 0001 0010 0011 0100 0101 0110 0111 1000
+             |<---------- 20 bits ----------->|<-- 12 bits -->|
+                    page number (p)                 offset (d)
+```
+
+### Step 2 — Split the Address
+
+| Field       | Bits      | Value          |
+|-------------|-----------|----------------|
+| Page number | [31 : 12] | `0x12345`      |
+| Page offset | [11 :  0] | `0x678`        |
+
+Calculation:
+```
+page_number = 0x12345678 >> 12 = 0x12345   (upper 20 bits)
+offset      = 0x12345678 & 0xFFF = 0x678   (lower 12 bits)
+```
+
+### Step 3 — Page Table Lookup
+
+```
+Page Table (index = page number):
+┌────────────┬────────────────┬─────────┬─────┬─────┐
+│   Index    │  Frame Number  │ Present │ R/W │ NX  │
+├────────────┼────────────────┼─────────┼─────┼─────┤
+│  0x12344   │   0x5F1        │    1    │  1  │  0  │
+│  0x12345   │   0x7A3   ◄──  │    1    │  1  │  0  │  ← our entry
+│  0x12346   │   0x2B9        │    0    │  0  │  0  │
+└────────────┴────────────────┴─────────┴─────┴─────┘
+
+PTE at index 0x12345:
+  present      = 1   (page is in RAM ✓)
+  frame_number = 0x7A3
+```
+
+### Step 4 — Compute Physical Address
+
+```
+Physical address = frame_number × page_size + offset
+                 = 0x7A3       × 0x1000    + 0x678
+                 = 0x7A3000                + 0x678
+                 = 0x7A3678
+```
+
+### Translation Diagram
+
+```
+Virtual Address:  0x12345678
+                  ┌─────────────────────┬────────────┐
+                  │  page number 0x12345│ offset 0x678│
+                  └──────────┬──────────┴─────┬──────┘
+                             │                │
+                    Page Table│lookup          │
+                             ▼                │
+                    frame_number = 0x7A3       │
+                             │                │
+                             ▼                ▼
+Physical Address: 0x7A3 << 12 | 0x678 = 0x7A3678
+```
+
+---
+
+### x86-64 Four-Level Page Table Walk
+
+On a 64-bit system, x86-64 uses 4-level paging with a 48-bit effective virtual address space (256 TB per process). Each level is indexed by 9 bits; the offset is 12 bits.
+
+```
+Virtual address (48 bits used):
+Bits: [47:39] [38:30] [29:21] [20:12] [11:0]
+       PML4    PDPT     PD      PT    Offset
+      (9 bits)(9 bits)(9 bits)(9 bits)(12 bits)
+```
+
+**Walk for VA = 0x00007FFF_ABCD_EF12:**
+
+```
+CR3 register → physical base of PML4 table
+    │
+    ├─ bits[47:39] = 0xFF → PML4[0xFF] → PDPT base address
+    │
+    ├─ bits[38:30] = 0x1FE → PDPT[0x1FE] → PD base address
+    │
+    ├─ bits[29:21] = 0x15E → PD[0x15E] → PT base address
+    │
+    ├─ bits[20:12] = 0x0CD → PT[0x0CD] → frame number
+    │
+    └─ bits[11:0]  = 0xF12 → offset within frame
+                           → Physical Address = frame << 12 | 0xF12
+```
+
+Each level is a 4 KB table of 512 × 8-byte entries. A full walk requires **4 memory accesses** (one per level), which is why the TLB is critical: it caches the final VA→PA mapping so the walk only happens on a TLB miss.
+
+---
+
+## Worked Example: TLB Hit vs TLB Miss
+
+### Scenario 1 — TLB Hit
+
+CPU wants to read virtual address **0x12345678**.
+
+```
+CPU generates VA 0x12345678
+         │
+         ▼
+   TLB Lookup: key = page number 0x12345
+         │
+         ▼
+   ┌─────────────────────────────────┐
+   │ TLB Entry Found:                │
+   │   0x12345  →  frame 0x7A3  ✓   │
+   └─────────────────────────────────┘
+         │
+         ▼
+   Physical address = 0x7A3678
+   Access RAM at 0x7A3678
+         │
+         ▼
+   Data returned   (~1–2 cycles total)
+```
+
+No page table walk needed. The MMU computes the physical address entirely from the TLB entry.
+
+---
+
+### Scenario 2 — TLB Miss
+
+CPU wants to read virtual address **0xABCDE000**.
+
+```
+CPU generates VA 0xABCDE000
+         │
+         ▼
+   TLB Lookup: key = page number 0xABCDE
+         │
+         ▼
+   ┌─────────────────────────────────┐
+   │ TLB Miss: no entry found   ✗   │
+   └─────────────────────────────────┘
+         │
+         ▼
+   Hardware Page Table Walker
+   (reads CR3 → PML4 → PDPT → PD → PT)
+   4 memory reads  (~20–200 cycles)
+         │
+         ▼
+   PTE found: present bit = ?
+         │
+    ┌────┴─────┐
+    │          │
+   P=1        P=0
+  (in RAM)  (on disk)
+    │          │
+    ▼          ▼
+  Load      PAGE FAULT
+  frame     (~1–10 million cycles)
+  into TLB      │
+    │           ▼
+    │     OS handler:
+    │     1. Find free frame
+    │     2. Read page from disk
+    │     3. Update PTE (P=1)
+    │     4. Reload TLB entry
+    │     5. Restart instruction
+    │           │
+    └─────┬─────┘
+          ▼
+   Physical address resolved
+   Access RAM
+```
+
+### Timing Comparison
+
+| Event                        | Typical Latency       | Relative Cost |
+|------------------------------|-----------------------|---------------|
+| TLB Hit                      | ~1–2 cycles           | 1×            |
+| TLB Miss (page in RAM)       | ~20–200 cycles        | 10–100×       |
+| Page Fault (page on disk, SSD)  | ~100,000 cycles    | ~50,000×      |
+| Page Fault (page on disk, HDD)  | ~10,000,000 cycles | ~5,000,000×   |
+
+> **Key insight:** A TLB miss costs 10–100× more than a hit; a page fault on a spinning disk costs ~10 million× more. Locality of reference keeps TLB hit rates above 99% in typical workloads, and the working-set model keeps page-fault rates low.
+
+---
+
+## Worked Example: LRU Page Replacement
+
+### Setup
+
+- **Reference string:** 7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1
+- **Number of frames:** 3
+- **Policy:** LRU — evict the page that was **least recently used**
+
+### Step-by-Step Trace
+
+Bold entries in the frame columns indicate **newly loaded pages**.
+
+| # | Ref | Frame 1 | Frame 2 | Frame 3 | Hit/Miss | Evict |
+|---|-----|---------|---------|---------|----------|-------|
+|  1 |  7  | **7**   | –       | –       | Miss     | –     |
+|  2 |  0  | 7       | **0**   | –       | Miss     | –     |
+|  3 |  1  | 7       | 0       | **1**   | Miss     | –     |
+|  4 |  2  | **2**   | 0       | 1       | Miss     | 7     |
+|  5 |  0  | 2       | 0       | 1       | **Hit**  | –     |
+|  6 |  3  | 2       | 0       | **3**   | Miss     | 1     |
+|  7 |  0  | 2       | 0       | 3       | **Hit**  | –     |
+|  8 |  4  | **4**   | 0       | 3       | Miss     | 2     |
+|  9 |  2  | 4       | 0       | **2**   | Miss     | 3     |
+| 10 |  3  | 4       | **3**   | 2       | Miss     | 0     |
+| 11 |  0  | **0**   | 3       | 2       | Miss     | 4     |
+| 12 |  3  | 0       | 3       | 2       | **Hit**  | –     |
+| 13 |  2  | 0       | 3       | 2       | **Hit**  | –     |
+| 14 |  1  | **1**   | 3       | 2       | Miss     | 0     |
+| 15 |  2  | 1       | 3       | 2       | **Hit**  | –     |
+| 16 |  0  | 1       | **0**   | 2       | Miss     | 3     |
+| 17 |  1  | 1       | 0       | 2       | **Hit**  | –     |
+| 18 |  7  | 1       | 0       | **7**   | Miss     | 2     |
+| 19 |  0  | 1       | 0       | 7       | **Hit**  | –     |
+| 20 |  1  | 1       | 0       | 7       | **Hit**  | –     |
+
+### LRU Results
+
+| Metric       | Count |
+|--------------|-------|
+| **Hits**     | 8     |
+| **Misses**   | 12    |
+| **Total**    | 20    |
+| Hit rate     | 40%   |
+
+### Eviction Reasoning for Key Steps
+
+- **Step 4 (ref 2):** Frames hold {7, 0, 1}. LRU order: 7 < 0 < 1 (7 used longest ago at step 1). **Evict 7.**
+- **Step 6 (ref 3):** Frames hold {2, 0, 1}. LRU order: 1 < 2 < 0 (0 refreshed at step 5). **Evict 1.**
+- **Step 8 (ref 4):** Frames hold {2, 0, 3}. LRU order: 2 < 3 < 0 (0 refreshed at step 7). **Evict 2.**
+- **Step 10 (ref 3):** Frames hold {4, 0, 2}. LRU order: 0 < 4 < 2 (0 last used at step 7). **Evict 0.**
+- **Step 11 (ref 0):** Frames hold {4, 3, 2}. LRU order: 4 < 3 < 2 (4 last used at step 8). **Evict 4.**
+
+### Comparison with FIFO (same reference string, 3 frames)
+
+FIFO evicts the page that has been **in memory the longest**, regardless of recent use. Running FIFO on the same string:
+
+| Algorithm | Misses (out of 20) | Hits |
+|-----------|--------------------|------|
+| **LRU**   | **12**             | 8    |
+| **FIFO**  | **15**             | 5    |
+| OPT       | ~9 (theoretical)   | 11   |
+
+FIFO suffers 3 extra misses compared to LRU because it keeps old pages that happen to be accessed again soon (e.g., it evicts page 0 at step 6 even though 0 was just used at step 5, because FIFO only looks at insertion order, not recency of use).
+
+> **Takeaway:** LRU approximates the optimal algorithm well because it exploits **temporal locality** — recently used pages are likely to be used again soon.

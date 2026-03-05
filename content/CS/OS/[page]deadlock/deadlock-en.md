@@ -1,7 +1,7 @@
 ---
 title: "Deadlock: Conditions, Prevention, and Recovery"
 description: "A thorough look at deadlocks in operating systems — the four necessary conditions, how to prevent and avoid them, and how to detect and recover when they occur."
-date: "2026-03-04"
+date: "2026-03-05"
 category: "CS/OS"
 tags: ["OS", "deadlock", "mutex", "concurrency", "Banker's algorithm", "resource management"]
 author: "Nemit"
@@ -420,3 +420,419 @@ std::lock_guard<std::mutex> lb(mutex_b, std::adopt_lock);
 g++ -fsanitize=thread -g -o program program.cpp
 ./program
 ```
+
+---
+
+## Worked Example: Banker's Algorithm — Safe Sequence Detection
+
+This example walks through the Banker's Algorithm with 5 processes (P0–P4) and 3 resource types (A, B, C).
+
+### Initial State
+
+**Available vector:**
+
+| A | B | C |
+|---|---|---|
+| 3 | 3 | 2 |
+
+**Max matrix** (maximum resources each process may ever request):
+
+| Process | A | B | C |
+|---------|---|---|---|
+| P0      | 7 | 5 | 3 |
+| P1      | 3 | 2 | 2 |
+| P2      | 9 | 0 | 2 |
+| P3      | 2 | 2 | 2 |
+| P4      | 4 | 3 | 3 |
+
+**Allocation matrix** (resources currently allocated to each process):
+
+| Process | A | B | C |
+|---------|---|---|---|
+| P0      | 0 | 1 | 0 |
+| P1      | 2 | 0 | 0 |
+| P2      | 3 | 0 | 2 |
+| P3      | 2 | 1 | 1 |
+| P4      | 0 | 0 | 2 |
+
+### Step 1 — Calculate the Need Matrix
+
+`Need[i] = Max[i] − Allocation[i]` for each process:
+
+| Process | A (Max−Alloc) | B (Max−Alloc) | C (Max−Alloc) |
+|---------|--------------|--------------|--------------|
+| P0      | 7 − 0 = **7** | 5 − 1 = **4** | 3 − 0 = **3** |
+| P1      | 3 − 2 = **1** | 2 − 0 = **2** | 2 − 0 = **2** |
+| P2      | 9 − 3 = **6** | 0 − 0 = **0** | 2 − 2 = **0** |
+| P3      | 2 − 2 = **0** | 2 − 1 = **1** | 2 − 1 = **1** |
+| P4      | 4 − 0 = **4** | 3 − 0 = **3** | 3 − 2 = **1** |
+
+**Need matrix:**
+
+| Process | A | B | C |
+|---------|---|---|---|
+| P0      | 7 | 4 | 3 |
+| P1      | 1 | 2 | 2 |
+| P2      | 6 | 0 | 0 |
+| P3      | 0 | 1 | 1 |
+| P4      | 4 | 3 | 1 |
+
+### Step 2 — Run the Safety Algorithm
+
+Starting values: `Work = [3, 3, 2]`, `Finish = [false, false, false, false, false]`
+
+**Iteration 1 — Find a process where Need[i] ≤ Work:**
+
+- P0: Need = [7,4,3] ≤ [3,3,2]? **No** (7 > 3)
+- P1: Need = [1,2,2] ≤ [3,3,2]? **Yes** ✓
+
+Select **P1**: `Work = Work + Allocation[P1] = [3,3,2] + [2,0,0] = [5,3,2]`, `Finish[P1] = true`
+
+**Iteration 2 — Work = [5, 3, 2]:**
+
+- P0: Need = [7,4,3] ≤ [5,3,2]? **No** (7 > 5, 4 > 3)
+- P2: Need = [6,0,0] ≤ [5,3,2]? **No** (6 > 5)
+- P3: Need = [0,1,1] ≤ [5,3,2]? **Yes** ✓
+
+Select **P3**: `Work = [5,3,2] + [2,1,1] = [7,4,3]`, `Finish[P3] = true`
+
+**Iteration 3 — Work = [7, 4, 3]:**
+
+- P0: Need = [7,4,3] ≤ [7,4,3]? **Yes** ✓ ← but let's check P4 first
+- P4: Need = [4,3,1] ≤ [7,4,3]? **Yes** ✓
+
+Select **P4**: `Work = [7,4,3] + [0,0,2] = [7,4,5]`, `Finish[P4] = true`
+
+**Iteration 4 — Work = [7, 4, 5]:**
+
+- P0: Need = [7,4,3] ≤ [7,4,5]? **Yes** ✓
+
+Select **P0**: `Work = [7,4,5] + [0,1,0] = [7,5,5]`, `Finish[P0] = true`
+
+**Iteration 5 — Work = [7, 5, 5]:**
+
+- P2: Need = [6,0,0] ≤ [7,5,5]? **Yes** ✓
+
+Select **P2**: `Work = [7,5,5] + [3,0,2] = [10,5,7]`, `Finish[P2] = true`
+
+All `Finish[i] = true` → **Safe state confirmed.**
+
+### Step 3 — Safe Sequence
+
+> **P1 → P3 → P4 → P0 → P2**
+
+### Step 4 — Verification
+
+| Step | Process | Work before | Need     | Can proceed? | Work after  |
+|------|---------|-------------|----------|--------------|-------------|
+| 1    | P1      | [3, 3, 2]   | [1, 2, 2] | Yes          | [5, 3, 2]  |
+| 2    | P3      | [5, 3, 2]   | [0, 1, 1] | Yes          | [7, 4, 3]  |
+| 3    | P4      | [7, 4, 3]   | [4, 3, 1] | Yes          | [7, 4, 5]  |
+| 4    | P0      | [7, 4, 5]   | [7, 4, 3] | Yes          | [7, 5, 5]  |
+| 5    | P2      | [7, 5, 5]   | [6, 0, 0] | Yes          | [10, 5, 7] |
+
+Each process in the safe sequence can obtain all remaining resources it needs using whatever `Work` has accumulated from processes that ran before it — confirming no deadlock is possible.
+
+---
+
+## Worked Example: Resource Allocation Graph — Cycle Detection
+
+A **Resource Allocation Graph (RAG)** uses directed edges to represent requests and assignments:
+
+- `P → R` : process P is **requesting** resource R
+- `R → P` : resource R is **assigned to** process P
+
+### Example 1: Deadlock Exists
+
+**Setup:**
+- 3 processes: P1, P2, P3
+- 2 resource types: R1 (1 instance), R2 (2 instances)
+- Assignments: R1 → P1, R2 → P2, R2 → P3
+- Requests: P1 → R2, P2 → R1, P3 → R1
+
+**ASCII Graph:**
+
+```
+        ┌─────┐          ┌─────┐
+        │     │◄─────────│     │
+        │ P1  │          │ R1  │  (1 instance, assigned to P1)
+        │     │─────────►│ [●] │
+        └─────┘          └──┬──┘
+            │               │
+            │ requests R2   │ P2 requests R1
+            ▼               │
+        ┌───┴─┐          ┌──▼──┐
+        │     │◄─────────│     │
+        │ R2  │  assign  │ P2  │
+        │[●][●]─────────►│     │
+        └──┬──┘          └─────┘
+           │
+           │ assigned to P3
+           ▼
+        ┌─────┐
+        │ P3  │─────────► R1 (P3 also requests R1)
+        └─────┘
+```
+
+A cleaner representation:
+
+```
+  P1 ──requests──► R2
+  ▲                │
+  │             assigned
+  │                ▼
+assigned          P2 ──requests──► R1
+  │                                │
+  │                             assigned
+  └──────────────────────────────── P1  (cycle!)
+
+  P3 ──requests──► R1
+  ▲                │
+  └── assigned ────┘  (R2 has 2 instances, one goes to P2, one to P3)
+```
+
+**Why this IS a deadlock:**
+
+The cycle `P1 → R2 → P2 → R1 → P1` exists:
+
+1. P1 holds R1 and waits for R2
+2. P2 holds one instance of R2 and waits for R1
+3. R1's only instance is held by P1, which is waiting for R2
+4. R2's two instances are both allocated (P2 and P3 each hold one)
+5. Neither P2 nor P3 can proceed → R2 is never freed → P1 waits forever
+
+Since R1 has only **one** instance and R2 has only **two** instances (both allocated), no process can obtain the resource it needs. The cycle involves all instances of every relevant resource — this is a true deadlock.
+
+### Example 2: Cycle But NO Deadlock
+
+Same structure, but **P3 no longer requests R1** (P3 can run to completion):
+
+```
+  P1 ──requests──► R2
+  ▲                │
+assigned         assigned
+  │                ▼
+  R1              P2 ──requests──► R1
+  │                                ▲
+assigned                        assigned
+  │                                │
+  P1 (R1→P1)                      P1  ← wait, let's re-read...
+```
+
+More clearly:
+
+```
+Assignments : R1 → P1,  R2 → P2,  R2 → P3
+Requests    : P1 → R2,  P2 → R1
+(P3 makes NO request — it can finish and release its R2 instance)
+```
+
+**Why no deadlock:**
+
+- P3 holds an instance of R2 and needs nothing → P3 runs and finishes, releasing its R2 instance
+- Now R2 has a free instance → P1's request for R2 can be granted
+- P1 runs and finishes, releasing R1
+- R1 is now free → P2's request for R1 can be granted → P2 runs and finishes
+
+Even though there is a cycle `P1 → R2 → P2 → R1 → P1`, R2 has **two instances** and one of them is held by P3 which doesn't need anything more. That breaks the deadlock: P3 can complete and release its R2 instance, unblocking the rest.
+
+**Key insight:** With multi-instance resources, a cycle in the RAG is a **necessary but not sufficient** condition for deadlock. You must verify that every instance of every resource in the cycle is tied up with no way out.
+
+---
+
+## Real Code Example: Deadlock and How to Fix It
+
+### The Problem: Classic Mutex Deadlock
+
+Two threads each hold one lock and wait for the other:
+
+```python
+import threading
+import time
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def thread1():
+    with lock_a:
+        time.sleep(0.1)  # simulate work
+        with lock_b:
+            print("Thread 1 done")
+
+def thread2():
+    with lock_b:
+        time.sleep(0.1)
+        with lock_a:  # ← deadlock!
+            print("Thread 2 done")
+
+t1 = threading.Thread(target=thread1)
+t2 = threading.Thread(target=thread2)
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+# Program hangs forever — neither thread prints anything
+```
+
+### Why Deadlock Happens: Interleaving Timeline
+
+```
+Time  Thread 1                          Thread 2
+────  ────────────────────────────      ────────────────────────────
+ 0    acquires lock_a ✓
+ 1                                      acquires lock_b ✓
+ 2    sleeps 0.1 s …
+ 3                                      sleeps 0.1 s …
+ 4    tries to acquire lock_b → BLOCKS  (lock_b held by Thread 2)
+ 5                                      tries to acquire lock_a → BLOCKS
+                                        (lock_a held by Thread 1)
+ ∞    waiting …                         waiting …
+```
+
+All four Coffman conditions are met:
+- **Mutual exclusion**: each lock is non-shareable
+- **Hold and wait**: Thread 1 holds `lock_a` while waiting for `lock_b`
+- **No preemption**: neither lock is forcibly taken away
+- **Circular wait**: Thread 1 → `lock_b` → Thread 2 → `lock_a` → Thread 1
+
+### Fix 1: Lock Ordering (Recommended)
+
+Always acquire locks in the **same global order** across all threads. If every thread acquires `lock_a` before `lock_b`, circular wait is impossible.
+
+```python
+import threading
+import time
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def thread1():
+    with lock_a:          # always acquire lock_a first
+        time.sleep(0.1)
+        with lock_b:      # then lock_b
+            print("Thread 1 done")
+
+def thread2():
+    with lock_a:          # same order: lock_a first
+        time.sleep(0.1)
+        with lock_b:      # then lock_b — no deadlock possible
+            print("Thread 2 done")
+
+t1 = threading.Thread(target=thread1)
+t2 = threading.Thread(target=thread2)
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+```
+
+Circular wait is eliminated because both threads always compete for `lock_a` first; whichever wins proceeds to acquire `lock_b` uncontested.
+
+### Fix 2: Lock Acquisition with Timeout
+
+Use `acquire(timeout=...)` to avoid waiting forever. If a lock cannot be obtained in time, release held locks, back off, and retry.
+
+```python
+import threading
+import time
+import random
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def thread1():
+    while True:
+        if lock_a.acquire(timeout=0.05):
+            try:
+                if lock_b.acquire(timeout=0.05):
+                    try:
+                        print("Thread 1 done")
+                        return
+                    finally:
+                        lock_b.release()
+                # Could not get lock_b — release lock_a and retry
+            finally:
+                lock_a.release()
+        time.sleep(random.uniform(0, 0.02))  # randomised back-off
+
+def thread2():
+    while True:
+        if lock_b.acquire(timeout=0.05):
+            try:
+                if lock_a.acquire(timeout=0.05):
+                    try:
+                        print("Thread 2 done")
+                        return
+                    finally:
+                        lock_a.release()
+            finally:
+                lock_b.release()
+        time.sleep(random.uniform(0, 0.02))
+```
+
+> **Note:** Timeout-based retry can theoretically livelock if both threads always back off at the same time. The randomised sleep breaks that symmetry.
+
+### Fix 3: Acquire Multiple Locks Atomically
+
+Python's `threading` module exposes `threading.Lock` but not a built-in multi-lock acquire. Use a context manager that sorts locks by `id()` to enforce a consistent global order automatically:
+
+```python
+import threading
+from contextlib import contextmanager
+
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+@contextmanager
+def acquire_locks(*locks):
+    # Sort by object id to enforce a consistent acquisition order
+    sorted_locks = sorted(locks, key=id)
+    for lock in sorted_locks:
+        lock.acquire()
+    try:
+        yield
+    finally:
+        for lock in reversed(sorted_locks):
+            lock.release()
+
+def thread1():
+    with acquire_locks(lock_a, lock_b):
+        print("Thread 1 done")
+
+def thread2():
+    with acquire_locks(lock_b, lock_a):  # order doesn't matter here
+        print("Thread 2 done")
+```
+
+Regardless of the order the caller passes the locks in, `acquire_locks` always acquires them in the same order (by memory address), making deadlock impossible.
+
+### Fix 4: Higher-Level Abstractions
+
+Avoid raw lock management entirely by using higher-level concurrency primitives:
+
+```python
+import concurrent.futures
+
+def work(value):
+    # No manual locking needed — executor serialises calls automatically
+    return value * 2
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    futures = [executor.submit(work, i) for i in range(5)]
+    results = [f.result() for f in futures]
+    print(results)
+```
+
+Other options:
+- **`queue.Queue`** — thread-safe producer/consumer without explicit locks
+- **`threading.RLock`** — re-entrant lock; a thread that already holds it can acquire it again without deadlocking itself
+- **`asyncio`** — single-threaded concurrency avoids most locking issues entirely
+
+### Summary: Which Fix to Use?
+
+| Approach | When to use |
+|---|---|
+| **Lock ordering** | Best default — simple, zero overhead, eliminates circular wait |
+| **Timeout + retry** | When lock order can't be enforced (e.g., third-party libraries) |
+| **Atomic multi-lock** | When you must hold multiple unordered locks simultaneously |
+| **Higher-level primitives** | New code — avoid raw locks wherever possible |
