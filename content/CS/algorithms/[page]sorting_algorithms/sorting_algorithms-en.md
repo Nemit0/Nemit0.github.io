@@ -373,3 +373,202 @@ Real-world implementations use hybrid approaches:
 Any comparison-based sort must make at least **Ω(n log n)** comparisons in the worst case. This is proven via decision tree analysis: with n! possible permutations, a binary decision tree needs at least log₂(n!) ≈ n log n height.
 
 Non-comparison sorts (counting, radix, bucket) bypass this by exploiting the structure of the data.
+
+---
+
+## Worked Example: Quick Sort with Median-of-Three Pivot
+
+**Starting array:** `[8, 3, 1, 5, 9, 2, 7, 4, 6]`  (indices 0–8)
+
+### Step 1 — Median-of-Three Pivot Selection
+
+To avoid O(n²) on sorted or reverse-sorted inputs, pick the pivot as the **median of the first, middle, and last elements**.
+
+```
+first = arr[0] = 8
+mid   = arr[4] = 9   (index = (0 + 8) // 2)
+last  = arr[8] = 6
+
+Sort the three candidates: 6 < 8 < 9
+Median = 8  →  pivot = 8
+```
+
+Swap the median (arr[0] = 8) to the last position so the standard Lomuto partition scheme can be applied unchanged:
+
+```
+Before swap: [8, 3, 1, 5, 9, 2, 7, 4, 6]
+Swap arr[0] ↔ arr[8]:
+After  swap: [6, 3, 1, 5, 9, 2, 7, 4, 8]   ← pivot 8 is now at arr[8]
+```
+
+### Step 2 — Partition Trace
+
+`pivot = 8`, `i = -1`, scan `j` from 0 to 7:
+
+| j | arr[j] | arr[j] ≤ pivot? | Action | Array state |
+|---|--------|-----------------|--------|-------------|
+| 0 | 6 | Yes | i=0, swap arr[0]↔arr[0] | `[6, 3, 1, 5, 9, 2, 7, 4, 8]` |
+| 1 | 3 | Yes | i=1, swap arr[1]↔arr[1] | `[6, 3, 1, 5, 9, 2, 7, 4, 8]` |
+| 2 | 1 | Yes | i=2, swap arr[2]↔arr[2] | `[6, 3, 1, 5, 9, 2, 7, 4, 8]` |
+| 3 | 5 | Yes | i=3, swap arr[3]↔arr[3] | `[6, 3, 1, 5, 9, 2, 7, 4, 8]` |
+| 4 | 9 | No  | — | `[6, 3, 1, 5, 9, 2, 7, 4, 8]` |
+| 5 | 2 | Yes | i=4, swap arr[4]↔arr[5] | `[6, 3, 1, 5, 2, 9, 7, 4, 8]` |
+| 6 | 7 | Yes | i=5, swap arr[5]↔arr[6] | `[6, 3, 1, 5, 2, 7, 9, 4, 8]` |
+| 7 | 4 | Yes | i=6, swap arr[6]↔arr[7] | `[6, 3, 1, 5, 2, 7, 4, 9, 8]` |
+
+Finally, place the pivot: swap arr[i+1] = arr[7] with arr[8] (the pivot):
+
+```
+[6, 3, 1, 5, 2, 7, 4, 8, 9]
+                        ^
+                  pivot 8 lands at index 7
+```
+
+All elements to the left of index 7 are ≤ 8; all to the right are > 8. ✓
+
+### Step 3 — Recursion Tree
+
+```
+             [8, 3, 1, 5, 9, 2, 7, 4, 6]
+                          |
+             pivot=8, partition at index 7
+            /                             \
+  [6, 3, 1, 5, 2, 7, 4]                 [9]
+   pivot=4 (med of 6,2,4)              (done)
+      /              \
+[3, 1, 2]          [6, 7, 5]
+ pivot=2           pivot=6
+   /   \             /    \
+ [1]  [3]          [5]   [7]
+```
+
+Each sub-call sorts independently, and the results concatenate to `[1, 2, 3, 4, 5, 6, 7, 8, 9]`.
+
+### Python Implementation
+
+```python
+def median_of_three(arr, low, high):
+    mid = (low + high) // 2
+    # Sort arr[low], arr[mid], arr[high] in place
+    if arr[low] > arr[mid]:
+        arr[low], arr[mid] = arr[mid], arr[low]
+    if arr[low] > arr[high]:
+        arr[low], arr[high] = arr[high], arr[low]
+    if arr[mid] > arr[high]:
+        arr[mid], arr[high] = arr[high], arr[mid]
+    # arr[mid] is now the median — move it to arr[high] for Lomuto partition
+    arr[mid], arr[high] = arr[high], arr[mid]
+    return arr[high]   # pivot value
+
+def partition(arr, low, high):
+    pivot = arr[high]
+    i = low - 1
+    for j in range(low, high):
+        if arr[j] <= pivot:
+            i += 1
+            arr[i], arr[j] = arr[j], arr[i]
+    arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    return i + 1
+
+def quick_sort_mot(arr, low, high):
+    if low < high:
+        median_of_three(arr, low, high)    # sets arr[high] to median pivot
+        pivot_idx = partition(arr, low, high)
+        quick_sort_mot(arr, low, pivot_idx - 1)
+        quick_sort_mot(arr, pivot_idx + 1, high)
+```
+
+**Why median-of-three helps:** It guarantees the pivot is never the extreme element of a sorted sub-array, cutting the chance of O(n²) behaviour in practice. An adversary would need to know all three of `arr[low]`, `arr[mid]`, and `arr[high]` to force a bad pivot every time.
+
+---
+
+## Worked Example: Merge Sort — Detailed Merge Step Trace
+
+**Starting array:** `[38, 27, 43, 3, 9, 82, 10]`
+
+### Step 1 — Recursive Split
+
+```
+Level 0:  [38, 27, 43, 3, 9, 82, 10]
+              /                  \
+Level 1: [38, 27, 43, 3]      [9, 82, 10]
+            /       \            /      \
+Level 2: [38, 27]  [43, 3]   [9, 82]   [10]
+          /    \    /    \    /    \
+Level 3: [38] [27] [43] [3] [9]  [82]  [10]
+```
+
+Single-element arrays are trivially sorted — recursion unwinds from here.
+
+### Step 2 — Merge Back (bottom-up)
+
+```
+Level 3→2:  [27, 38]    [3, 43]    [9, 82]    [10]
+Level 2→1:  [3, 27, 38, 43]        [9, 10, 82]
+Level 1→0:  [3, 9, 10, 27, 38, 43, 82]
+```
+
+### Step 3 — Final Merge in Detail
+
+The most instructive step is merging `L = [3, 27, 38, 43]` and `R = [9, 10, 82]`.
+
+| Step | i | j | Compare | Take | Result so far |
+|------|---|---|---------|------|---------------|
+| 1 | 0 | 0 | L[0]=3 **≤** R[0]=9 | 3 (from L) | `[3]` |
+| 2 | 1 | 0 | L[1]=27 > R[0]=9 | 9 (from R) | `[3, 9]` |
+| 3 | 1 | 1 | L[1]=27 > R[1]=10 | 10 (from R) | `[3, 9, 10]` |
+| 4 | 1 | 2 | L[1]=27 **≤** R[2]=82 | 27 (from L) | `[3, 9, 10, 27]` |
+| 5 | 2 | 2 | L[2]=38 **≤** R[2]=82 | 38 (from L) | `[3, 9, 10, 27, 38]` |
+| 6 | 3 | 2 | L[3]=43 **≤** R[2]=82 | 43 (from L) | `[3, 9, 10, 27, 38, 43]` |
+| 7 | 4 | 2 | i exhausted | append R[2:] = [82] | `[3, 9, 10, 27, 38, 43, 82]` |
+
+Pointer movement visualised:
+
+```
+L: [ 3 | 27 | 38 | 43 ]
+        i →
+R: [ 9  | 10 | 82 ]
+              j →
+Result grows left-to-right ──────────────────►
+```
+
+### Why `≤` Ensures Stability
+
+```python
+if left[i] <= right[j]:   # ← ≤, not <
+    result.append(left[i])
+    i += 1
+```
+
+When `left[i] == right[j]`, using `≤` always picks from the **left** half first. Because the left half contains elements that appeared **earlier** in the original array, their relative order is preserved — the definition of stability.
+
+If you mistakenly wrote `<`, equal elements from the right half would be taken first, reversing their original order and breaking stability.
+
+### Full Annotated Implementation
+
+```python
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left  = merge_sort(arr[:mid])    # T(n/2)
+    right = merge_sort(arr[mid:])    # T(n/2)
+    return merge(left, right)        # O(n)
+
+def merge(left, right):
+    result = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:      # <= preserves stability
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    # At most one of these extends is non-empty
+    result.extend(left[i:])
+    result.extend(right[j:])
+    return result
+```
+
+**Recurrence:** T(n) = 2T(n/2) + O(n) → **O(n log n)** by the Master Theorem (case 2).
