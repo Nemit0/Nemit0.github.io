@@ -508,3 +508,297 @@ A problem likely uses DP if:
 - The brute force is exponential
 - It has overlapping subproblems
 - Keywords: "minimum cost", "maximum profit", "number of ways", "can you reach"
+
+---
+
+## Worked Example: 0/1 Knapsack — Complete DP Table Fill-in
+
+**Items and capacity:**
+
+| Item | Weight | Value |
+|------|--------|-------|
+| 1    | 2      | 3     |
+| 2    | 3      | 4     |
+| 3    | 4      | 5     |
+| 4    | 5      | 6     |
+
+**Capacity W = 8**
+
+`dp[i][w]` = maximum value achievable using the first `i` items with capacity `w`.
+
+**Recurrence:**
+```
+dp[i][w] = dp[i-1][w]                              if weight[i] > w  (can't fit)
+dp[i][w] = max(dp[i-1][w],  dp[i-1][w-weight[i]] + value[i])  otherwise
+```
+
+---
+
+### Step 0 — Initial Table (all zeros)
+
+Row `i=0` is the base case: zero items → zero value for every capacity.
+
+| i \ w | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|-------|---|---|---|---|---|---|---|---|---|
+| **0** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **1** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **2** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **3** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **4** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+---
+
+### Step 1 — Fill Row 1 (Item 1: weight=2, value=3)
+
+For each capacity `w`, we decide: **skip** Item 1 (keep `dp[0][w]`) or **take** it (add value 3, use `dp[0][w-2]`).
+
+| w | Skip → dp[0][w] | Take → dp[0][w-2]+3 | Condition | dp[1][w] |
+|---|-----------------|----------------------|-----------|----------|
+| 0 | 0               | — (2 > 0, can't fit) | skip only | **0**    |
+| 1 | 0               | — (2 > 1, can't fit) | skip only | **0**    |
+| 2 | 0               | dp[0][0]+3 = 0+3 = 3 | max(0,3)  | **3**    |
+| 3 | 0               | dp[0][1]+3 = 0+3 = 3 | max(0,3)  | **3**    |
+| 4 | 0               | dp[0][2]+3 = 0+3 = 3 | max(0,3)  | **3**    |
+| 5 | 0               | dp[0][3]+3 = 0+3 = 3 | max(0,3)  | **3**    |
+| 6 | 0               | dp[0][4]+3 = 0+3 = 3 | max(0,3)  | **3**    |
+| 7 | 0               | dp[0][5]+3 = 0+3 = 3 | max(0,3)  | **3**    |
+| 8 | 0               | dp[0][6]+3 = 0+3 = 3 | max(0,3)  | **3**    |
+
+**Table after Row 1:**
+
+| i \ w | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|-------|---|---|---|---|---|---|---|---|---|
+| **0** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **1** | 0 | 0 | **3** | **3** | **3** | **3** | **3** | **3** | **3** |
+| **2** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **3** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **4** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+---
+
+### Step 2 — Fill Row 2 (Item 2: weight=3, value=4)
+
+| w | Skip → dp[1][w] | Take → dp[1][w-3]+4 | Condition    | dp[2][w] |
+|---|-----------------|----------------------|--------------|----------|
+| 0 | 0               | — (3 > 0)            | skip only    | **0**    |
+| 1 | 0               | — (3 > 1)            | skip only    | **0**    |
+| 2 | 3               | — (3 > 2)            | skip only    | **3**    |
+| 3 | 3               | dp[1][0]+4 = 0+4 = 4 | max(3,4) → take | **4** |
+| 4 | 3               | dp[1][1]+4 = 0+4 = 4 | max(3,4) → take | **4** |
+| 5 | 3               | dp[1][2]+4 = 3+4 = 7 | max(3,7) → take | **7** |
+| 6 | 3               | dp[1][3]+4 = 3+4 = 7 | max(3,7) → take | **7** |
+| 7 | 3               | dp[1][4]+4 = 3+4 = 7 | max(3,7) → take | **7** |
+| 8 | 3               | dp[1][5]+4 = 3+4 = 7 | max(3,7) → take | **7** |
+
+**Table after Row 2:**
+
+| i \ w | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|-------|---|---|---|---|---|---|---|---|---|
+| **0** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **1** | 0 | 0 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| **2** | 0 | 0 | 3 | **4** | **4** | **7** | **7** | **7** | **7** |
+| **3** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **4** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+---
+
+### Step 3 — Fill Row 3 (Item 3: weight=4, value=5)
+
+| w | Skip → dp[2][w] | Take → dp[2][w-4]+5 | Condition    | dp[3][w] |
+|---|-----------------|----------------------|--------------|----------|
+| 0 | 0               | — (4 > 0)            | skip only    | **0**    |
+| 1 | 0               | — (4 > 1)            | skip only    | **0**    |
+| 2 | 3               | — (4 > 2)            | skip only    | **3**    |
+| 3 | 4               | — (4 > 3)            | skip only    | **4**    |
+| 4 | 4               | dp[2][0]+5 = 0+5 = 5 | max(4,5) → take | **5** |
+| 5 | 7               | dp[2][1]+5 = 0+5 = 5 | max(7,5) → skip | **7** |
+| 6 | 7               | dp[2][2]+5 = 3+5 = 8 | max(7,8) → take | **8** |
+| 7 | 7               | dp[2][3]+5 = 4+5 = 9 | max(7,9) → take | **9** |
+| 8 | 7               | dp[2][4]+5 = 4+5 = 9 | max(7,9) → take | **9** |
+
+**Table after Row 3:**
+
+| i \ w | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|-------|---|---|---|---|---|---|---|---|---|
+| **0** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **1** | 0 | 0 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| **2** | 0 | 0 | 3 | 4 | 4 | 7 | 7 | 7 | 7 |
+| **3** | 0 | 0 | 3 | 4 | **5** | **7** | **8** | **9** | **9** |
+| **4** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+---
+
+### Step 4 — Fill Row 4 (Item 4: weight=5, value=6)
+
+| w | Skip → dp[3][w] | Take → dp[3][w-5]+6 | Condition    | dp[4][w] |
+|---|-----------------|----------------------|--------------|----------|
+| 0 | 0               | — (5 > 0)            | skip only    | **0**    |
+| 1 | 0               | — (5 > 1)            | skip only    | **0**    |
+| 2 | 3               | — (5 > 2)            | skip only    | **3**    |
+| 3 | 4               | — (5 > 3)            | skip only    | **4**    |
+| 4 | 5               | — (5 > 4)            | skip only    | **5**    |
+| 5 | 7               | dp[3][0]+6 = 0+6 = 6 | max(7,6) → skip | **7** |
+| 6 | 8               | dp[3][1]+6 = 0+6 = 6 | max(8,6) → skip | **8** |
+| 7 | 9               | dp[3][2]+6 = 3+6 = 9 | max(9,9) → skip | **9** |
+| 8 | 9               | dp[3][3]+6 = 4+6 = 10 | max(9,10) → take | **10** |
+
+**Final completed table:**
+
+| i \ w | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|-------|---|---|---|---|---|---|---|---|---|
+| **0** | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **1** | 0 | 0 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| **2** | 0 | 0 | 3 | 4 | 4 | 7 | 7 | 7 | 7 |
+| **3** | 0 | 0 | 3 | 4 | 5 | 7 | 8 | 9 | 9 |
+| **4** | 0 | 0 | 3 | 4 | 5 | 7 | 8 | 9 | **10** |
+
+**Maximum value = dp[4][8] = 10**
+
+---
+
+### Traceback — Which Items Were Selected?
+
+Start at `dp[4][8]` and walk backwards. At each row `i`, check whether Item `i` was taken:
+- If `dp[i][w] == dp[i-1][w]` → Item `i` was **skipped** (move up one row, same column)
+- If `dp[i][w] != dp[i-1][w]` → Item `i` was **taken** (move up one row, subtract weight)
+
+```
+Start: i=4, w=8, dp[4][8]=10
+
+Step 1: dp[4][8]=10 vs dp[3][8]=9  → 10 ≠ 9  → Item 4 TAKEN (w=5, v=6)
+        Remaining capacity: w = 8 - 5 = 3, move to i=3
+
+Step 2: dp[3][3]=4  vs dp[2][3]=4  → 4 == 4  → Item 3 SKIPPED
+        move to i=2, w stays 3
+
+Step 3: dp[2][3]=4  vs dp[1][3]=3  → 4 ≠ 3   → Item 2 TAKEN (w=3, v=4)
+        Remaining capacity: w = 3 - 3 = 0, move to i=1
+
+Step 4: w=0, nothing more to take. Stop.
+```
+
+**Selected items: Item 2 (weight=3, value=4) + Item 4 (weight=5, value=6)**
+- Total weight: 3 + 5 = **8** ✓ (exactly at capacity)
+- Total value: 4 + 6 = **10** ✓
+
+```python
+def knapsack_traceback(weights, values, capacity):
+    n = len(weights)
+    dp = [[0] * (capacity + 1) for _ in range(n + 1)]
+
+    for i in range(1, n + 1):
+        for w in range(capacity + 1):
+            dp[i][w] = dp[i - 1][w]
+            if weights[i - 1] <= w:
+                dp[i][w] = max(dp[i][w],
+                               dp[i - 1][w - weights[i - 1]] + values[i - 1])
+
+    # Traceback
+    selected = []
+    w = capacity
+    for i in range(n, 0, -1):
+        if dp[i][w] != dp[i - 1][w]:    # Item i was taken
+            selected.append(i)
+            w -= weights[i - 1]
+
+    return dp[n][capacity], list(reversed(selected))
+
+weights = [2, 3, 4, 5]
+values  = [3, 4, 5, 6]
+max_val, items = knapsack_traceback(weights, values, 8)
+# max_val = 10, items = [2, 4]
+```
+
+---
+
+### Space-Optimized 1D DP — Same Example
+
+Instead of a 2D table, keep a single array `dp[0..W]`. To prevent reusing an item in the same pass, iterate capacity in **reverse** (high → low).
+
+```
+dp[w] after processing each item (capacity w=0..8)
+```
+
+**Initial state:**
+```
+w:   0  1  2  3  4  5  6  7  8
+dp: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+```
+
+**Process Item 1 (weight=2, value=3) — iterate w from 8 down to 2:**
+
+| w | dp[w] before | dp[w-2]+3       | dp[w] after |
+|---|--------------|-----------------|-------------|
+| 8 | 0            | dp[6]+3 = 0+3=3 | **3**       |
+| 7 | 0            | dp[5]+3 = 0+3=3 | **3**       |
+| 6 | 0            | dp[4]+3 = 0+3=3 | **3**       |
+| 5 | 0            | dp[3]+3 = 0+3=3 | **3**       |
+| 4 | 0            | dp[2]+3 = 0+3=3 | **3**       |
+| 3 | 0            | dp[1]+3 = 0+3=3 | **3**       |
+| 2 | 0            | dp[0]+3 = 0+3=3 | **3**       |
+
+```
+dp: [0, 0, 3, 3, 3, 3, 3, 3, 3]
+```
+
+**Process Item 2 (weight=3, value=4) — iterate w from 8 down to 3:**
+
+| w | dp[w] before | dp[w-3]+4       | dp[w] after |
+|---|--------------|-----------------|-------------|
+| 8 | 3            | dp[5]+4 = 3+4=7 | **7**       |
+| 7 | 3            | dp[4]+4 = 3+4=7 | **7**       |
+| 6 | 3            | dp[3]+4 = 3+4=7 | **7**       |
+| 5 | 3            | dp[2]+4 = 3+4=7 | **7**       |
+| 4 | 3            | dp[1]+4 = 0+4=4 | **4**       |
+| 3 | 3            | dp[0]+4 = 0+4=4 | **4**       |
+
+```
+dp: [0, 0, 3, 4, 4, 7, 7, 7, 7]
+```
+
+**Process Item 3 (weight=4, value=5) — iterate w from 8 down to 4:**
+
+| w | dp[w] before | dp[w-4]+5       | dp[w] after |
+|---|--------------|-----------------|-------------|
+| 8 | 7            | dp[4]+5 = 4+5=9 | **9**       |
+| 7 | 7            | dp[3]+5 = 4+5=9 | **9**       |
+| 6 | 7            | dp[2]+5 = 3+5=8 | **8**       |
+| 5 | 7            | dp[1]+5 = 0+5=5 | 7 (skip)    |
+| 4 | 4            | dp[0]+5 = 0+5=5 | **5**       |
+
+```
+dp: [0, 0, 3, 4, 5, 7, 8, 9, 9]
+```
+
+**Process Item 4 (weight=5, value=6) — iterate w from 8 down to 5:**
+
+| w | dp[w] before | dp[w-5]+6        | dp[w] after |
+|---|--------------|------------------|-------------|
+| 8 | 9            | dp[3]+6 = 4+6=10 | **10**      |
+| 7 | 9            | dp[2]+6 = 3+6=9  | 9 (tie, skip) |
+| 6 | 8            | dp[1]+6 = 0+6=6  | 8 (skip)    |
+| 5 | 7            | dp[0]+6 = 0+6=6  | 7 (skip)    |
+
+**Final 1D array:**
+```
+dp: [0, 0, 3, 4, 5, 7, 8, 9, 10]
+```
+
+`dp[8] = 10` — same answer as the 2D approach. ✓
+
+> **Why reverse order?** When processing Item `i`, `dp[w-weight[i]]` must still represent the state from *before* Item `i` was considered (i.e., the previous row in the 2D table). Iterating backwards guarantees that smaller indices haven't been updated yet in the current pass, preventing an item from being counted twice.
+
+```python
+def knapsack_1d(weights, values, capacity):
+    dp = [0] * (capacity + 1)
+
+    for i in range(len(weights)):
+        for w in range(capacity, weights[i] - 1, -1):    # Reverse!
+            dp[w] = max(dp[w], dp[w - weights[i]] + values[i])
+
+    return dp[capacity]
+
+# knapsack_1d([2,3,4,5], [3,4,5,6], 8) == 10
+```
+
+**Space**: O(W) instead of O(n × W) — a significant improvement for large `n`.

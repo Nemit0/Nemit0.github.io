@@ -542,3 +542,185 @@ def hanoi(n, source, target, auxiliary):
 # hanoi(3, 'A', 'C', 'B')
 # Minimum moves: 2^n - 1
 ```
+
+---
+
+## Worked Example: N-Queens on a 4×4 Board
+
+The 4×4 board has exactly **2 solutions**. Let's trace the complete backtracking search to see exactly how the algorithm finds both.
+
+### Setup
+
+```
+Columns:  0   1   2   3
+         --- --- --- ---
+Row 0:  |   |   |   |   |
+Row 1:  |   |   |   |   |
+Row 2:  |   |   |   |   |
+Row 3:  |   |   |   |   |
+```
+
+We track three sets to detect conflicts in O(1):
+- **`cols`** — column indices already occupied
+- **`diag1`** — `row - col` values (top-left → bottom-right diagonals `\`)
+- **`diag2`** — `row + col` values (top-right → bottom-left diagonals `/`)
+
+Two queens share a diagonal if and only if they share a `row - col` or `row + col` value.
+
+---
+
+### Phase 1: Starting with col 0 → Dead End
+
+**Row 0, try col 0** ✓  
+Place `Q` at `(0,0)`.  
+`cols={0}`, `diag1={0}`, `diag2={0}`
+
+**Row 1:**
+- col 0 → col 0 ∈ `cols` ✗ (same column)
+- col 1 → `diag1`: 1−1 = **0** ∈ `diag1` ✗ (same `\` diagonal as (0,0))
+- col 2 → all checks pass ✓ → place `Q` at `(1,2)`  
+  `cols={0,2}`, `diag1={0,−1}`, `diag2={0,3}`
+
+**Row 2 (with queens at (0,0) and (1,2)):**
+- col 0 → col 0 ∈ `cols` ✗
+- col 1 → `diag2`: 2+1 = **3** ∈ `diag2` ✗ (same `/` diagonal as (1,2))
+- col 2 → col 2 ∈ `cols` ✗
+- col 3 → `diag1`: 2−3 = **−1** ∈ `diag1` ✗ (same `\` diagonal as (1,2))
+
+All 4 columns pruned → **backtrack**, undo `(1,2)`.
+
+**Row 1 (continuing from col 3):**
+- col 3 → all checks pass ✓ → place `Q` at `(1,3)`  
+  `cols={0,3}`, `diag1={0,−2}`, `diag2={0,4}`
+
+**Row 2 (with queens at (0,0) and (1,3)):**
+- col 0 → col 0 ∈ `cols` ✗
+- col 1 → all checks pass ✓ → place `Q` at `(2,1)`  
+  `cols={0,1,3}`, `diag1={0,−2,1}`, `diag2={0,4,3}`
+
+**Row 3 (with queens at (0,0), (1,3), (2,1)):**
+- col 0 → col 0 ∈ `cols` ✗
+- col 1 → col 1 ∈ `cols` ✗
+- col 2 → `diag1`: 3−2 = **1** ∈ `diag1` ✗ (same `\` diagonal as (2,1))
+- col 3 → col 3 ∈ `cols` ✗
+
+All 4 columns pruned → **backtrack**, undo `(2,1)`.
+
+**Row 2 (continuing):**
+- col 2 → `diag1`: 2−2 = **0** ∈ `diag1` ✗ (same `\` diagonal as (0,0))
+- col 3 → col 3 ∈ `cols` ✗
+
+All columns pruned → **backtrack**, undo `(1,3)`.
+
+Row 1 exhausted → **backtrack**, undo `(0,0)`.
+
+---
+
+### Phase 2: First Solution via col 1 in row 0
+
+**Row 0, try col 1** ✓  
+Place `Q` at `(0,1)`.  
+`cols={1}`, `diag1={−1}`, `diag2={1}`
+
+**Row 1:**
+- col 0 → `diag2`: 1+0 = **1** ∈ `diag2` ✗ (same `/` diagonal as (0,1))
+- col 1 → col 1 ∈ `cols` ✗
+- col 2 → `diag1`: 1−2 = **−1** ∈ `diag1` ✗ (same `\` diagonal as (0,1))
+- col 3 → all checks pass ✓ → place `Q` at `(1,3)`  
+  `cols={1,3}`, `diag1={−1,−2}`, `diag2={1,4}`
+
+**Row 2:**
+- col 0 → `diag1`: 2−0 = **2** ∉ `diag1`, `diag2`: 2+0 = **2** ∉ `diag2`, col 0 ∉ `cols` ✓  
+  Place `Q` at `(2,0)`.  
+  `cols={0,1,3}`, `diag1={−1,−2,2}`, `diag2={1,4,2}`
+
+**Row 3:**
+- col 0 → col 0 ∈ `cols` ✗
+- col 1 → col 1 ∈ `cols` ✗
+- col 2 → `diag1`: 3−2 = **1** ∉ `diag1`, `diag2`: 3+2 = **5** ∉ `diag2`, col 2 ∉ `cols` ✓  
+  Place `Q` at `(3,2)`.  
+  `cols={0,1,2,3}` — all 4 rows filled!
+
+🎉 **Solution 1 found:** `[(0,1), (1,3), (2,0), (3,2)]`
+
+```
+. Q . .
+. . . Q
+Q . . .
+. . Q .
+```
+
+---
+
+### Phase 3: Second Solution via col 2 in row 0
+
+After recording solution 1 the algorithm backtracks fully and resumes at row 0:
+
+**Row 0, try col 2** ✓  
+Place `Q` at `(0,2)`.  
+`cols={2}`, `diag1={−2}`, `diag2={2}`
+
+**Row 1:**
+- col 0 → `diag1`: 1−0 = **1** ∉ `diag1`, `diag2`: 1+0 = **1** ∉ `diag2`, col 0 ∉ `cols` ✓  
+  Place `Q` at `(1,0)`.  
+  `cols={0,2}`, `diag1={−2,1}`, `diag2={2,1}`
+
+**Row 2:**
+- col 0 → col 0 ∈ `cols` ✗
+- col 1 → `diag1`: 2−1 = **1** ∈ `diag1` ✗ (same `\` diagonal as (1,0))
+- col 2 → col 2 ∈ `cols` ✗
+- col 3 → all checks pass ✓ → place `Q` at `(2,3)`  
+  `cols={0,2,3}`, `diag1={−2,1,−1}`, `diag2={2,1,5}`
+
+**Row 3:**
+- col 0 → col 0 ∈ `cols` ✗
+- col 1 → `diag1`: 3−1 = **2** ∉ `diag1`, `diag2`: 3+1 = **4** ∉ `diag2`, col 1 ∉ `cols` ✓  
+  Place `Q` at `(3,1)`.  
+  `cols={0,1,2,3}` — all 4 rows filled!
+
+🎉 **Solution 2 found:** `[(0,2), (1,0), (2,3), (3,1)]`
+
+```
+. . Q .
+Q . . .
+. . . Q
+. Q . .
+```
+
+---
+
+### Summary
+
+**4-Queens has exactly 2 solutions.**
+
+| Solution | Queen placements | Board rows |
+|---|---|---|
+| 1 | (0,1) → (1,3) → (2,0) → (3,2) | `. Q . .` / `. . . Q` / `Q . . .` / `. . Q .` |
+| 2 | (0,2) → (1,0) → (2,3) → (3,1) | `. . Q .` / `Q . . .` / `. . . Q` / `. Q . .` |
+
+Note that the two solutions are mirror images of each other across the vertical centre axis.
+
+### Why Pruning Is So Powerful
+
+Brute force checks every possible placement of one queen per row with no constraints:
+
+```
+4 choices × 4 choices × 4 choices × 4 choices = 4⁴ = 256 candidate combinations
+```
+
+Backtracking with set-based conflict detection eliminates invalid columns the moment a
+conflict is detected — often after placing only 1 or 2 queens. In row 1 with a queen
+at `(0,1)`, for example, all four columns are evaluated and three are pruned instantly,
+leaving only col 3 to recurse into.
+
+| Root choice | Outcome |
+|---|---|
+| Row 0, col 0 | Dead end — no solution found in entire subtree |
+| Row 0, col 1 | ✓ Solution 1 found |
+| Row 0, col 2 | ✓ Solution 2 found |
+| Row 0, col 3 | Dead end (symmetric to col 0) |
+
+The backtracking algorithm visits roughly **~20 nodes** to find both solutions, compared
+to **256** for brute force — about a **12× reduction** on this tiny board. For N = 8
+(where brute force would consider 8⁸ = 16,777,216 combinations), backtracking with
+pruning explores only a few thousand nodes, a speedup of several orders of magnitude.

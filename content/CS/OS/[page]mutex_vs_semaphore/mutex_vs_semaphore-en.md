@@ -1,7 +1,7 @@
 ---
 title: "Mutex vs Semaphore"
 description: "Understanding critical sections, race conditions, mutual exclusion, and the differences between mutexes and semaphores — with practical examples and the classic producer-consumer problem."
-date: "2026-03-04"
+date: "2026-03-05"
 category: "CS/OS"
 tags: ["OS", "mutex", "semaphore", "concurrency", "synchronization", "race condition", "critical section"]
 author: "Nemit"
@@ -585,3 +585,244 @@ Writer: copy data → modify copy → atomic pointer swap → wait for readers t
 ```
 
 RCU is ideal for data structures that are read millions of times per second but updated rarely (routing tables, configuration data, module lists in the kernel). The Linux kernel has ~15,000 RCU usage sites.
+
+---
+
+## Worked Example: Producer-Consumer with Semaphores
+
+The **producer-consumer** (bounded-buffer) problem is the canonical use case for counting semaphores. A fixed-size buffer sits between producers and consumers; producers must not overflow it and consumers must not underflow it.
+
+### Setup
+
+- **Buffer size**: 3 slots
+- `empty` (counting semaphore, initial value **3**) — tracks available empty slots; a producer calls `wait(empty)` before writing and `signal(empty)` after a consumer frees a slot
+- `full` (counting semaphore, initial value **0**) — tracks filled slots; a producer calls `signal(full)` after writing and a consumer calls `wait(full)` before reading
+- `mutex` (binary semaphore / mutex, initial value **1**) — protects the buffer itself from concurrent access
+
+### Step-by-step Trace
+
+| Step | Thread | Action | empty | full | mutex | Buffer |
+|------|--------|--------|-------|------|-------|--------|
+| 0 | — | Initial state | 3 | 0 | 1 | `[]` |
+| 1 | P | `wait(empty)` succeeds | **2** | 0 | 1 | `[]` |
+| 2 | P | `wait(mutex)` succeeds | 2 | 0 | **0** | `[]` |
+| 3 | P | writes item **A** to buffer | 2 | 0 | 0 | `[A]` |
+| 4 | P | `signal(mutex)` | 2 | 0 | **1** | `[A]` |
+| 5 | P | `signal(full)` | 2 | **1** | 1 | `[A]` |
+| 6 | P | `wait(empty)` succeeds | **1** | 1 | 1 | `[A]` |
+| 7 | P | `wait(mutex)` succeeds | 1 | 1 | **0** | `[A]` |
+| 8 | P | writes item **B** to buffer | 1 | 1 | 0 | `[A, B]` |
+| 9 | P | `signal(mutex)` | 1 | 1 | **1** | `[A, B]` |
+| 10 | P | `signal(full)` | 1 | **2** | 1 | `[A, B]` |
+| 11 | C | `wait(full)` succeeds | 1 | **1** | 1 | `[A, B]` |
+| 12 | C | `wait(mutex)` succeeds | 1 | 1 | **0** | `[A, B]` |
+| 13 | C | reads item **A** from buffer | 1 | 1 | 0 | `[B]` |
+| 14 | C | `signal(mutex)` | 1 | 1 | **1** | `[B]` |
+| 15 | C | `signal(empty)` | **2** | 1 | 1 | `[B]` |
+| 16 | P | `wait(empty)` succeeds | **1** | 1 | 1 | `[B]` |
+| 17 | P | `wait(mutex)` succeeds | 1 | 1 | **0** | `[B]` |
+| 18 | P | writes item **C** to buffer | 1 | 1 | 0 | `[B, C]` |
+| 19 | P | `signal(mutex)` | 1 | 1 | **1** | `[B, C]` |
+| 20 | P | `signal(full)` | 1 | **2** | 1 | `[B, C]` |
+| 21 | P | `wait(empty)` succeeds | **0** | 2 | 1 | `[B, C]` |
+| 22 | P | `wait(mutex)` succeeds | 0 | 2 | **0** | `[B, C]` |
+| 23 | P | writes item **D** to buffer | 0 | 2 | 0 | `[B, C, D]` |
+| 24 | P | `signal(mutex)` | 0 | 2 | **1** | `[B, C, D]` |
+| 25 | P | `signal(full)` | 0 | **3** | 1 | `[B, C, D]` |
+
+### Buffer Full — Producer Blocks
+
+At step 25 `empty = 0`. If the producer attempts another item:
+
+```
+P: wait(empty)  →  empty = 0, so P BLOCKS (suspended by the OS)
+```
+
+The producer is descheduled and will only be woken when a consumer calls `signal(empty)` (step 15 pattern). This is the **flow-control** guarantee of the semaphore: no busy-waiting, no overflow.
+
+### Buffer Empty — Consumer Blocks
+
+Suppose after step 25 a second consumer tries to read immediately:
+
+```
+C2: wait(full)  →  full = 3, succeeds  (full → 2)
+C2: wait(mutex) →  succeeds
+C2: reads item from buffer
+C2: signal(mutex)
+C2: signal(empty)  (empty → 1)
+
+C3: wait(full)  →  ...
+    (keep consuming until full = 0)
+
+C3: wait(full)  →  full = 0, so C3 BLOCKS
+```
+
+C3 is suspended until a producer calls `signal(full)`. No items are lost; no item is read twice.
+
+### Python Implementation
+
+```python
+import threading
+import time
+import random
+from collections import deque
+
+BUFFER_SIZE = 3
+
+buffer: deque = deque()
+empty = threading.Semaphore(BUFFER_SIZE)   # empty slots available
+full  = threading.Semaphore(0)             # filled slots available
+mutex = threading.Semaphore(1)            # mutual exclusion for buffer access
+
+def producer(name: str, items: list[str]) -> None:
+    for item in items:
+        time.sleep(random.uniform(0.1, 0.3))  # simulate production time
+        empty.acquire()          # wait for an empty slot
+        mutex.acquire()          # enter critical section
+        buffer.append(item)
+        print(f"[{name}] produced {item!r}  buffer={list(buffer)}")
+        mutex.release()          # leave critical section
+        full.release()           # signal that a new item is available
+
+def consumer(name: str, n: int) -> None:
+    for _ in range(n):
+        full.acquire()           # wait for a filled slot
+        mutex.acquire()          # enter critical section
+        item = buffer.popleft()
+        print(f"[{name}] consumed {item!r}  buffer={list(buffer)}")
+        mutex.release()          # leave critical section
+        empty.release()          # signal that a slot is now empty
+        time.sleep(random.uniform(0.1, 0.4))  # simulate consumption time
+
+if __name__ == "__main__":
+    items = ["A", "B", "C", "D", "E", "F"]
+    t_prod = threading.Thread(target=producer, args=("Producer", items))
+    t_cons = threading.Thread(target=consumer, args=("Consumer", len(items)))
+    t_prod.start()
+    t_cons.start()
+    t_prod.join()
+    t_cons.join()
+    print("Done.")
+```
+
+Key points:
+- `empty.acquire()` before writing and `empty.release()` after consuming enforce the upper bound.
+- `full.acquire()` before reading and `full.release()` after producing enforce the lower bound.
+- `mutex` wraps only the actual buffer manipulation — keeping the critical section as short as possible.
+
+---
+
+## Worked Example: Readers-Writers Problem
+
+The **readers-writers** problem models any system where a shared resource (database, file, cache) can be read concurrently but must be written exclusively.
+
+### Rules
+
+1. Any number of readers may read **simultaneously**.
+2. A writer requires **exclusive** access — no other readers or writers.
+
+### Implementation
+
+```python
+import threading
+import time
+
+# Shared state
+read_count = 0
+data = 0
+
+# Synchronization primitives
+read_count_mutex = threading.Lock()   # protects read_count
+write_lock       = threading.Lock()   # exclusive access for writers (and first/last reader)
+
+def reader(name: str) -> None:
+    global read_count, data
+
+    # --- Entry section ---
+    with read_count_mutex:
+        read_count += 1
+        if read_count == 1:
+            write_lock.acquire()   # first reader blocks writers
+    # write_count_mutex released; multiple readers now inside
+
+    # --- Reading (critical section for data) ---
+    print(f"[{name}] reading data = {data}  (active readers: {read_count})")
+    time.sleep(0.2)
+
+    # --- Exit section ---
+    with read_count_mutex:
+        read_count -= 1
+        if read_count == 0:
+            write_lock.release()   # last reader unblocks writers
+
+def writer(name: str, value: int) -> None:
+    global data
+
+    # --- Entry section ---
+    write_lock.acquire()
+
+    # --- Writing (critical section) ---
+    data = value
+    print(f"[{name}] writing data = {data}")
+    time.sleep(0.3)
+
+    # --- Exit section ---
+    write_lock.release()
+```
+
+### Execution Trace
+
+```
+Timeline →
+
+Reader1  ──[acquire read_count_mutex, read_count=1, acquire write_lock]──[reading]──[read_count=0, release write_lock]──
+Reader2  ──────[acquire read_count_mutex, read_count=2]──[reading]──[read_count=1]──[read_count=0, release write_lock]──
+Writer1  ────────────────────[acquire write_lock … BLOCKED]──────────────────────────────────[UNBLOCKED, writing]──
+
+Step-by-step:
+1. Reader1 enters: read_count → 1, acquires write_lock (blocks Writer1), starts reading.
+2. Reader2 enters: read_count → 2, write_lock already held — Reader2 reads concurrently with Reader1.
+3. Writer1 calls write_lock.acquire() → BLOCKS (write_lock is held by readers).
+4. Reader1 finishes: read_count → 1 (not zero, write_lock stays held).
+5. Reader2 finishes: read_count → 0, last reader releases write_lock.
+6. Writer1 is unblocked, acquires write_lock, writes exclusively.
+7. Writer1 releases write_lock — next reader or writer may proceed.
+```
+
+### Notes
+
+- This is the **first readers-writers** solution (readers have priority). A writer can starve if readers arrive continuously.
+- The **second solution** gives writers priority; a reader can starve.
+- Production systems (e.g., `pthread_rwlock`, Java `ReadWriteLock`, Python `threading.RLock` with custom logic) implement fair policies to avoid starvation.
+
+---
+
+## When to Use: Mutex vs Binary Semaphore vs Counting Semaphore
+
+### Comparison Table
+
+| Use case | Best primitive | Why |
+|----------|---------------|-----|
+| Mutual exclusion (protect a critical section) | **Mutex** | Ownership semantics: only the thread that locked it can unlock it. Prevents accidental unlock by another thread. Supports priority inheritance. |
+| Resource pool with N identical slots | **Counting semaphore** | Naturally tracks the number of available resources. Value ranges from 0 to N. |
+| One-shot event / thread signaling | **Binary semaphore** | Thread A does work, then `signal()`s; Thread B `wait()`s until signaled. No ownership needed — B is released by A. |
+| Bounded-buffer (producer-consumer) | **Counting semaphore** (×2) + **Mutex** | `empty` and `full` semaphores enforce buffer bounds; mutex protects the buffer data structure. |
+| Readers-writers | **Mutex** (read_count) + **Mutex** (write_lock) | `read_count_mutex` protects a counter; `write_lock` enforces writer exclusivity. |
+| Once-only initialization (run exactly once) | **Mutex** + flag, or language primitive (`std::call_once`, `sync.Once`) | Mutex guards the flag check-and-set; the flag prevents re-entry after first initialization. |
+
+### The Key Semantic Difference: Ownership
+
+| Property | Mutex | Semaphore |
+|----------|-------|-----------|
+| Ownership | **Yes** — only the locking thread may unlock | **No** — any thread may call `signal()` |
+| Deadlock detection | Easier (OS can detect owner == waiting thread) | Harder |
+| Priority inheritance | Supported (avoids priority inversion) | Not applicable |
+| Signaling between threads | Not the intended use | Primary use case for binary semaphore |
+| Recursive locking | Often supported (`PTHREAD_MUTEX_RECURSIVE`) | Not applicable |
+
+**Ownership** is the defining distinction:
+
+- A **mutex** is a *token of ownership*. The thread that acquires it is responsible for releasing it. If another thread tries to release a mutex it does not own, the behavior is either an error or undefined — which catches bugs early.
+- A **semaphore** is a *signal counter*. One thread can `wait()` and a completely different thread can `signal()`. This makes semaphores ideal for producer-consumer coordination but dangerous as a drop-in mutex replacement (no one enforces who releases it).
+
+> **Rule of thumb**: Use a mutex when you own a resource and must release it yourself. Use a semaphore when you need to signal another thread or limit access to a pool of N resources.

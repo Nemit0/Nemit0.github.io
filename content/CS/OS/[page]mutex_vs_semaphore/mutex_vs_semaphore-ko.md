@@ -1,7 +1,7 @@
 ---
 title: "뮤텍스 vs 세마포어"
 description: "임계 구역, 경쟁 조건, 상호 배제, 뮤텍스와 세마포어의 차이 — 실용적인 예제와 고전적인 생산자-소비자 문제 포함."
-date: "2026-03-04"
+date: "2026-03-05"
 category: "CS/OS"
 tags: ["OS", "뮤텍스", "세마포어", "동시성", "동기화", "경쟁 조건", "임계 구역"]
 author: "Nemit"
@@ -454,3 +454,244 @@ bool cas(int *addr, int *expected, int desired);
 **RCU**는 읽기 위주 자료구조에 최적화된 동기화 메커니즘입니다 (Linux 커널에서 광범위하게 사용). 읽기 측은 어떤 락이나 원자적 명령어도 없이 데이터에 접근합니다 — 제로 오버헤드. 쓰기 측은 데이터의 새 버전을 생성하고 포인터를 교체합니다. 기존 읽기 측이 모두 완료된 후 이전 버전을 해제합니다.
 
 RCU는 초당 수백만 번 읽히지만 드물게 업데이트되는 자료구조(라우팅 테이블, 설정 데이터, 커널의 모듈 리스트)에 이상적입니다. Linux 커널에는 약 15,000개의 RCU 사용 지점이 있습니다.
+
+---
+
+## 풀이 예제: 세마포어를 이용한 생산자-소비자
+
+**생산자-소비자** (유한 버퍼) 문제는 계수 세마포어의 대표적인 사용 사례입니다. 고정 크기 버퍼가 생산자와 소비자 사이에 위치하며, 생산자는 버퍼를 초과해서는 안 되고 소비자는 빈 버퍼에서 읽어서는 안 됩니다.
+
+### 설정
+
+- **버퍼 크기**: 3칸
+- `empty` (계수 세마포어, 초기값 **3**) — 사용 가능한 빈 칸의 수를 추적. 생산자는 쓰기 전에 `wait(empty)` 호출, 소비자가 칸을 해제한 후 `signal(empty)` 호출
+- `full` (계수 세마포어, 초기값 **0**) — 채워진 칸의 수를 추적. 생산자는 쓰기 후 `signal(full)` 호출, 소비자는 읽기 전에 `wait(full)` 호출
+- `mutex` (이진 세마포어 / 뮤텍스, 초기값 **1**) — 버퍼 자체를 동시 접근으로부터 보호
+
+### 단계별 트레이스
+
+| 단계 | 스레드 | 동작 | empty | full | mutex | 버퍼 |
+|------|--------|------|-------|------|-------|------|
+| 0 | — | 초기 상태 | 3 | 0 | 1 | `[]` |
+| 1 | P | `wait(empty)` 성공 | **2** | 0 | 1 | `[]` |
+| 2 | P | `wait(mutex)` 성공 | 2 | 0 | **0** | `[]` |
+| 3 | P | 버퍼에 항목 **A** 쓰기 | 2 | 0 | 0 | `[A]` |
+| 4 | P | `signal(mutex)` | 2 | 0 | **1** | `[A]` |
+| 5 | P | `signal(full)` | 2 | **1** | 1 | `[A]` |
+| 6 | P | `wait(empty)` 성공 | **1** | 1 | 1 | `[A]` |
+| 7 | P | `wait(mutex)` 성공 | 1 | 1 | **0** | `[A]` |
+| 8 | P | 버퍼에 항목 **B** 쓰기 | 1 | 1 | 0 | `[A, B]` |
+| 9 | P | `signal(mutex)` | 1 | 1 | **1** | `[A, B]` |
+| 10 | P | `signal(full)` | 1 | **2** | 1 | `[A, B]` |
+| 11 | C | `wait(full)` 성공 | 1 | **1** | 1 | `[A, B]` |
+| 12 | C | `wait(mutex)` 성공 | 1 | 1 | **0** | `[A, B]` |
+| 13 | C | 버퍼에서 항목 **A** 읽기 | 1 | 1 | 0 | `[B]` |
+| 14 | C | `signal(mutex)` | 1 | 1 | **1** | `[B]` |
+| 15 | C | `signal(empty)` | **2** | 1 | 1 | `[B]` |
+| 16 | P | `wait(empty)` 성공 | **1** | 1 | 1 | `[B]` |
+| 17 | P | `wait(mutex)` 성공 | 1 | 1 | **0** | `[B]` |
+| 18 | P | 버퍼에 항목 **C** 쓰기 | 1 | 1 | 0 | `[B, C]` |
+| 19 | P | `signal(mutex)` | 1 | 1 | **1** | `[B, C]` |
+| 20 | P | `signal(full)` | 1 | **2** | 1 | `[B, C]` |
+| 21 | P | `wait(empty)` 성공 | **0** | 2 | 1 | `[B, C]` |
+| 22 | P | `wait(mutex)` 성공 | 0 | 2 | **0** | `[B, C]` |
+| 23 | P | 버퍼에 항목 **D** 쓰기 | 0 | 2 | 0 | `[B, C, D]` |
+| 24 | P | `signal(mutex)` | 0 | 2 | **1** | `[B, C, D]` |
+| 25 | P | `signal(full)` | 0 | **3** | 1 | `[B, C, D]` |
+
+### 버퍼 가득 참 — 생산자 블록
+
+25단계에서 `empty = 0`입니다. 생산자가 또 다른 항목을 시도하면:
+
+```
+P: wait(empty)  →  empty = 0이므로 P가 블록됨 (OS에 의해 일시 중단)
+```
+
+생산자는 디스케줄되어 소비자가 `signal(empty)`를 호출할 때(15단계 패턴)만 깨어납니다. 이것이 세마포어의 **흐름 제어** 보장입니다: 바쁜 대기 없음, 버퍼 오버플로 없음.
+
+### 버퍼 비어 있음 — 소비자 블록
+
+25단계 이후 두 번째 소비자가 즉시 읽기를 시도한다고 가정하면:
+
+```
+C2: wait(full)  →  full = 3, 성공  (full → 2)
+C2: wait(mutex) →  성공
+C2: 버퍼에서 항목 읽기
+C2: signal(mutex)
+C2: signal(empty)  (empty → 1)
+
+C3: wait(full)  →  ...
+    (full = 0이 될 때까지 계속 소비)
+
+C3: wait(full)  →  full = 0이므로 C3가 블록됨
+```
+
+C3는 생산자가 `signal(full)`을 호출할 때까지 일시 중단됩니다. 항목 손실도, 중복 읽기도 없습니다.
+
+### Python 구현
+
+```python
+import threading
+import time
+import random
+from collections import deque
+
+BUFFER_SIZE = 3
+
+buffer: deque = deque()
+empty = threading.Semaphore(BUFFER_SIZE)   # 사용 가능한 빈 슬롯
+full  = threading.Semaphore(0)             # 채워진 슬롯
+mutex = threading.Semaphore(1)            # 버퍼 접근에 대한 상호 배제
+
+def producer(name: str, items: list[str]) -> None:
+    for item in items:
+        time.sleep(random.uniform(0.1, 0.3))  # 생산 시간 시뮬레이션
+        empty.acquire()          # 빈 슬롯 대기
+        mutex.acquire()          # 임계 구역 진입
+        buffer.append(item)
+        print(f"[{name}] 생산: {item!r}  buffer={list(buffer)}")
+        mutex.release()          # 임계 구역 퇴출
+        full.release()           # 새 항목 사용 가능 신호
+
+def consumer(name: str, n: int) -> None:
+    for _ in range(n):
+        full.acquire()           # 채워진 슬롯 대기
+        mutex.acquire()          # 임계 구역 진입
+        item = buffer.popleft()
+        print(f"[{name}] 소비: {item!r}  buffer={list(buffer)}")
+        mutex.release()          # 임계 구역 퇴출
+        empty.release()          # 슬롯이 이제 비어 있음을 신호
+        time.sleep(random.uniform(0.1, 0.4))  # 소비 시간 시뮬레이션
+
+if __name__ == "__main__":
+    items = ["A", "B", "C", "D", "E", "F"]
+    t_prod = threading.Thread(target=producer, args=("생산자", items))
+    t_cons = threading.Thread(target=consumer, args=("소비자", len(items)))
+    t_prod.start()
+    t_cons.start()
+    t_prod.join()
+    t_cons.join()
+    print("완료.")
+```
+
+핵심 포인트:
+- 쓰기 전 `empty.acquire()`와 소비 후 `empty.release()`가 상한을 강제합니다.
+- 읽기 전 `full.acquire()`와 생산 후 `full.release()`가 하한을 강제합니다.
+- `mutex`는 실제 버퍼 조작만 감싸 임계 구역을 최대한 짧게 유지합니다.
+
+---
+
+## 풀이 예제: 독자-저자 문제
+
+**독자-저자** 문제는 공유 자원(데이터베이스, 파일, 캐시)을 동시에 읽을 수 있지만 독점적으로 써야 하는 모든 시스템을 모델링합니다.
+
+### 규칙
+
+1. 여러 독자가 **동시에** 읽을 수 있습니다.
+2. 저자는 **독점** 접근이 필요합니다 — 다른 독자나 저자 없음.
+
+### 구현
+
+```python
+import threading
+import time
+
+# 공유 상태
+read_count = 0
+data = 0
+
+# 동기화 기본 요소
+read_count_mutex = threading.Lock()   # read_count 보호
+write_lock       = threading.Lock()   # 저자(및 첫/마지막 독자)에 대한 독점 접근
+
+def reader(name: str) -> None:
+    global read_count, data
+
+    # --- 진입 구역 ---
+    with read_count_mutex:
+        read_count += 1
+        if read_count == 1:
+            write_lock.acquire()   # 첫 번째 독자가 저자를 블록
+    # read_count_mutex 해제; 여러 독자가 동시에 진입
+
+    # --- 읽기 (데이터에 대한 임계 구역) ---
+    print(f"[{name}] data = {data} 읽기 중  (활성 독자: {read_count})")
+    time.sleep(0.2)
+
+    # --- 퇴출 구역 ---
+    with read_count_mutex:
+        read_count -= 1
+        if read_count == 0:
+            write_lock.release()   # 마지막 독자가 저자를 언블록
+
+def writer(name: str, value: int) -> None:
+    global data
+
+    # --- 진입 구역 ---
+    write_lock.acquire()
+
+    # --- 쓰기 (임계 구역) ---
+    data = value
+    print(f"[{name}] data = {data} 쓰기 중")
+    time.sleep(0.3)
+
+    # --- 퇴출 구역 ---
+    write_lock.release()
+```
+
+### 실행 트레이스
+
+```
+시간 흐름 →
+
+독자1   ──[read_count_mutex 획득, read_count=1, write_lock 획득]──[읽기 중]──[read_count=0, write_lock 해제]──
+독자2   ──────[read_count_mutex 획득, read_count=2]──[읽기 중]──[read_count=1]──[read_count=0, write_lock 해제]──
+저자1   ────────────────────[write_lock 획득 시도 … 블록됨]──────────────────────────────────[언블록됨, 쓰기 중]──
+
+단계별:
+1. 독자1 진입: read_count → 1, write_lock 획득 (저자1 블록), 읽기 시작.
+2. 독자2 진입: read_count → 2, write_lock 이미 보유 — 독자2가 독자1과 동시에 읽기.
+3. 저자1이 write_lock.acquire() 호출 → 블록됨 (write_lock이 독자에게 보유됨).
+4. 독자1 완료: read_count → 1 (0이 아님, write_lock 유지됨).
+5. 독자2 완료: read_count → 0, 마지막 독자가 write_lock 해제.
+6. 저자1이 언블록됨, write_lock 획득, 독점적으로 쓰기.
+7. 저자1이 write_lock 해제 — 다음 독자 또는 저자 진행 가능.
+```
+
+### 참고
+
+- 이것은 **첫 번째 독자-저자** 해법입니다(독자 우선). 독자가 계속 도착하면 저자가 기아 상태에 빠질 수 있습니다.
+- **두 번째 해법**은 저자 우선을 제공합니다; 독자가 기아 상태에 빠질 수 있습니다.
+- 실제 시스템(예: `pthread_rwlock`, Java `ReadWriteLock`, Python의 커스텀 `threading` 로직)은 기아를 피하기 위해 공정한 정책을 구현합니다.
+
+---
+
+## 언제 무엇을 쓸까: 뮤텍스 vs 이진 세마포어 vs 계수 세마포어
+
+### 비교 표
+
+| 사용 사례 | 최적 기본 요소 | 이유 |
+|----------|--------------|------|
+| 상호 배제 (임계 구역 보호) | **뮤텍스** | 소유권 의미론: 잠근 스레드만 해제 가능. 다른 스레드의 실수로 인한 해제를 방지. 우선순위 상속 지원. |
+| N개의 동일한 슬롯을 가진 자원 풀 | **계수 세마포어** | 사용 가능한 자원의 수를 자연스럽게 추적. 값은 0에서 N까지 범위. |
+| 일회성 이벤트 / 스레드 신호 | **이진 세마포어** | 스레드 A가 작업 후 `signal()`; 스레드 B가 신호를 기다려 `wait()`. 소유권 불필요 — B는 A에 의해 해제됨. |
+| 유한 버퍼 (생산자-소비자) | **계수 세마포어** (×2) + **뮤텍스** | `empty`와 `full` 세마포어가 버퍼 한계를 강제; 뮤텍스가 버퍼 자료구조를 보호. |
+| 독자-저자 | **뮤텍스** (read_count용) + **뮤텍스** (write_lock용) | `read_count_mutex`가 카운터를 보호; `write_lock`이 저자 독점성을 강제. |
+| 일회성 초기화 (정확히 한 번만 실행) | **뮤텍스** + 플래그, 또는 언어 기본 요소 (`std::call_once`, `sync.Once`) | 뮤텍스가 플래그 확인-설정을 보호; 플래그가 첫 초기화 후 재진입을 방지. |
+
+### 핵심 의미론적 차이: 소유권
+
+| 속성 | 뮤텍스 | 세마포어 |
+|------|--------|---------|
+| 소유권 | **있음** — 잠근 스레드만 해제 가능 | **없음** — 어떤 스레드든 `signal()` 호출 가능 |
+| 교착상태 감지 | 용이 (OS가 소유자 == 대기 스레드 감지 가능) | 어려움 |
+| 우선순위 상속 | 지원 (우선순위 역전 방지) | 해당 없음 |
+| 스레드 간 신호 | 의도된 용도 아님 | 이진 세마포어의 주요 사용 사례 |
+| 재귀적 잠금 | 종종 지원 (`PTHREAD_MUTEX_RECURSIVE`) | 해당 없음 |
+
+**소유권**이 결정적인 차이입니다:
+
+- **뮤텍스**는 *소유권의 토큰*입니다. 획득한 스레드가 해제 책임이 있습니다. 다른 스레드가 소유하지 않은 뮤텍스를 해제하려 하면 오류이거나 정의되지 않은 동작 — 버그를 조기에 발견합니다.
+- **세마포어**는 *신호 카운터*입니다. 한 스레드가 `wait()`하고 완전히 다른 스레드가 `signal()`할 수 있습니다. 이는 생산자-소비자 조정에 이상적이지만 뮤텍스 대체로 사용하면 위험합니다(누가 해제하는지 강제하는 것이 없음).
+
+> **경험칙**: 자원을 소유하고 스스로 해제해야 할 때는 뮤텍스를 사용하세요. 다른 스레드에 신호를 보내거나 N개 자원 풀에 대한 접근을 제한할 때는 세마포어를 사용하세요.
