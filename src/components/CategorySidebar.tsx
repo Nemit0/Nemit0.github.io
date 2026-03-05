@@ -209,9 +209,11 @@ export default function CategorySidebar({
         `}
       >
         {/* Fixed-width inner panel so content doesn't squish during the width transition */}
-        <div className="h-full overflow-y-auto p-3 w-56 lg:w-60">
-          {sidebarContent}
-        </div>
+        {isDesktopOpen && (
+          <div className="h-full overflow-y-auto p-3 w-56 lg:w-60">
+            {sidebarContent}
+          </div>
+        )}
       </aside>
 
       {/* Desktop/tablet toggle button — fixed to viewport, sits at the right edge of the sidebar */}
