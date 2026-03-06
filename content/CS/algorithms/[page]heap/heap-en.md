@@ -332,10 +332,10 @@ import heapq
 
 # --- Build ---
 nums = [5, 3, 8, 1, 2]
-heapq.heapify(nums)          # O(n), transforms list in-place → [1, 2, 8, 5, 3]
+heapq.heapify(nums)          # O(n), transforms list in-place into a min-heap (now nums[0] == 1)
 
 # --- Insert ---
-heapq.heappush(nums, 0)      # O(log n), inserts 0 → [0, 2, 1, 5, 3, 8]
+heapq.heappush(nums, 0)      # O(log n), inserts 0 (now nums[0] == 0)
 
 # --- Extract minimum ---
 heapq.heappop(nums)          # O(log n) → returns 0
