@@ -1,6 +1,6 @@
 ---
 title: "힙"
-description: "힙 자료구조 — 이진 힙, 최소 힙과 최대 힙, 배열 표현, 힙ify, 힙 정렬, 그리고 주요 힙 문제 구현."
+description: "힙 자료구조 — 이진 힙, 최소 힙과 최대 힙, 배열 표현, 힙 구성(Heapify), 힙 정렬, 그리고 주요 힙 문제 구현."
 date: "2026-03-06"
 category: "CS/algorithms"
 tags: ["힙", "자료구조", "우선순위 큐", "이진 힙", "힙 정렬", "algorithms", "heap"]
