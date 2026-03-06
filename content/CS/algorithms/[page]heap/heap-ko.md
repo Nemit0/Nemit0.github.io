@@ -332,10 +332,10 @@ import heapq
 
 # --- 힙 구성 ---
 nums = [5, 3, 8, 1, 2]
-heapq.heapify(nums)          # O(n), 리스트를 제자리에서 변환 → [1, 2, 8, 5, 3]
+heapq.heapify(nums)          # O(n), 리스트를 제자리에서 변환 → [1, 2, 8, 3, 5]
 
 # --- 삽입 ---
-heapq.heappush(nums, 0)      # O(log n), 0 삽입 → [0, 2, 1, 5, 3, 8]
+heapq.heappush(nums, 0)      # O(log n), 0 삽입 → [0, 2, 1, 3, 5, 8]
 
 # --- 최솟값 추출 ---
 heapq.heappop(nums)          # O(log n) → 0 반환
