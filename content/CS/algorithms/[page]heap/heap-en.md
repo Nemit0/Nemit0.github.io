@@ -579,7 +579,7 @@ def least_interval(tasks, n):
 # Schedule: A B _ A B _ A B  (8 slots)
 ```
 
-**Time**: O(m log m) where m is the number of unique tasks.
+**Time**: O(N log m + T) where N is the total number of tasks, m is the number of unique tasks, and T is the returned schedule length (including idle intervals).
 
 ### 6. Dijkstra's Shortest Path
 
