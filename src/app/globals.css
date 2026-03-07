@@ -354,4 +354,16 @@ body {
     padding: 0.625rem 0.75rem;
     font-size: 0.875rem;
   }
+
+  /* Wrap code block lines on mobile instead of horizontal scrolling */
+  .markdown-content pre {
+    overflow-x: visible;
+  }
+
+  .markdown-content pre code,
+  .markdown-content pre .hljs {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.75rem;
+  }
 }
